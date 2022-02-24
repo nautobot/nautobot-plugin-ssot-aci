@@ -1,6 +1,6 @@
 # Nautobot SSoT for Cisco ACI
 
-The Single Source of Truth (SSoT) Plugin for [Nautobot](https://github.com/nautobot/nautobot) provides the ability to synchronize objects from a Cisco ACI fabric to Nautobot. It eliminates the need to manually enter information in Nautobot that is present in the Cisco APIC controller, such as device model/serial numbers, Leaf/Spine/Controller IP addressing, and more. Below is the list of items that are currently synchronized:
+This Single Source of Truth (SSoT) Plugin for [Nautobot](https://github.com/nautobot/nautobot) provides the ability to synchronize objects from a Cisco ACI fabric to Nautobot. It eliminates the need to manually enter information in Nautobot that is present in the Cisco APIC controller, such as device model/serial numbers, Leaf/Spine/Controller IP addressing, and more. Below is the list of items that are currently synchronized:
 
 | **ACI**                                       	| **Nautobot**                  	|
 |-----------------------------------------------	|-------------------------------	|
