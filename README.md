@@ -1,6 +1,27 @@
 # Nautobot SSoT for Cisco ACI
 
-A plugin for [Nautobot](https://github.com/nautobot/nautobot).
+The Single Source of Truth (SSoT) Plugin for [Nautobot](https://github.com/nautobot/nautobot) provides the ability to synchronize objects from a Cisco ACI fabric to Nautobot. It eliminates the need to manually enter information in Nautobot that is present in the Cisco APIC controller, such as device model/serial numbers, Leaf/Spine/Controller IP addressing, and more. Below is the list of items that are currently synchronized:
+
+| **ACI**                                       	| **Nautobot**                  	|
+|-----------------------------------------------	|-------------------------------	|
+| Tenant                                        	| Tenant                        	|
+| Node Type (Leaf/Spine/Controller)             	| Device Role                   	|
+| Node (Leaf/Spine/Controller)                  	| Device                        	|
+| Model                                         	| Device Type                   	|
+| Management IP address (Leaf/Spine/Controller) 	| IP Address                    	|
+| Bridge Domain Subnet                          	| Prefix, IP Address              |
+| Interfaces                                    	| Interface Template, Interface 	|
+|
+
+## Screenshots
+![image](https://user-images.githubusercontent.com/6945229/155608142-c1882882-4706-4af4-bc60-524c88f0bf48.png)
+![image](https://user-images.githubusercontent.com/6945229/155608556-22eade64-8289-4e20-82a4-e2f4e15809f4.png)
+![image](https://user-images.githubusercontent.com/6945229/155609055-1d93335b-53b1-4fd8-bf1b-58d64b970f1e.png)
+![image](https://user-images.githubusercontent.com/6945229/155609222-c720f23f-4af8-4659-a5af-83bc69466d07.png)
+![image](https://user-images.githubusercontent.com/6945229/155609612-34bdcfea-bde2-4924-8de0-3cf74796d744.png)
+![image](https://user-images.githubusercontent.com/6945229/155609826-d3938767-6287-4626-94a3-aea4fd758204.png)
+![image](https://user-images.githubusercontent.com/6945229/155610226-799c79de-719b-44af-9a07-2aaabfea5510.png)
+
 
 ## Installation
 
@@ -10,7 +31,7 @@ The plugin is available as a Python package in pypi and can be installed with pi
 pip install nautobot-ssot-aci
 ```
 
-> The plugin is compatible with Nautobot 1.1.0 and higher
+> The plugin is compatible with Nautobot 1.2.0 and higher
 
 To ensure Nautobot SSoT for Cisco ACI is automatically re-installed during future upgrades, create a file named `local_requirements.txt` (if not already existing) in the Nautobot root directory (alongside `requirements.txt`) and list the `nautobot-ssot-aci` package:
 
@@ -23,23 +44,73 @@ Once installed, the plugin needs to be enabled in your `nautobot_config.py`
 ```python
 # In your nautobot_config.py
 PLUGINS = ["nautobot_ssot_aci"]
-
-# PLUGINS_CONFIG = {
-#   "nautobot_ssot_aci": {
-#     ADD YOUR SETTINGS HERE
-#   }
-# }
 ```
 
-The plugin behavior can be controlled with the following list of settings
 
-- TODO
+In addition, the plugin behavior can be controlled with the following list of settings.
+```python
+PLUGINS_CONFIG = {
+    "nautobot_ssot_aci": {
+        # URL and credentials should be configured as environment variables on the host system
+        'aci_url': os.getenv("NAUTOBOT_ACI_URL"),
+        'aci_username': os.getenv("NAUTOBOT_ACI_USERNAME"),
+        'aci_password': os.getenv("NAUTOBOT_ACI_PASSWORD"),
+        'aci_verify': os.getenv("NAUTOBOT_ACI_VERIFY_SSL"),
+        # Tag which will be created and applied to all synchronized objects.
+        'tag': 'NTC_ACI',
+        'tag_color': 'FF3333',
+        # Manufacturer name. Specify existing, or a new one with this name will be created.
+        'manufacturer_name': 'Cisco',
+        # Exclude any tenants you would not like to bring over from ACI.
+        'ignore_tenants': ['common', 'mgmt', 'infra'],
+        # Enter a prefix to be prepended to the tenant, for example the name of the ACI fabric.
+        # A prefix to append to the front of a tenant name.  Set to None if no prefix is desired. 
+        'tenant_prefix': 'ntc_aci',
+        # The below value will appear in the Comments field on objects created in Nautobot
+        'comments': 'Created by ACI SSoT Plugin',
+        # Site to associate objects. Specify existing, or a new site with this name will be created.
+        'site': 'Data Center'
+    }
+}
+```
+
+Some of the above settings can be omitted, and if omitted the below defaults will take effect:
+```python
+default_settings = {'tag': 'ACI',
+                        'tag_color': 'FF3333',
+                        'manufacturer_name': 'Cisco',
+                        'site': 'Data Center'
+                        }
+                        
+```
+The APIC URL and credentials should be created as environment variables on the host system, for example:
+
+```bash
+export NAUTOBOT_ACI_URL="https://aci.cloud.networktocode.com"
+export NAUTOBOT_ACI_USERNAME="admin"
+export NAUTOBOT_ACI_PASSWORD="not_so_secret_password"
+export NAUTOBOT_ACI_VERIFY_SSL="False"
+```
+> Alternatively, if using the [Docker Development Environment](#docker), the URL and credentials should be defined in `development/creds.env`.  See the example in `development\creds.example.env`.  
+
 
 ## Usage
+The plugin can be used by navigating to **Plugins > Dashboard** in Nautobot.  Then click on **Cisco ACI Data Source**.
+![image](https://user-images.githubusercontent.com/6945229/155611179-8d39b79b-8c35-4a74-a871-2ebbc36a2b94.png)
+ 
+From the **Cisco ACI Data Source** page, you can view historical synchronization jobs, or click **Sync Now** to begin a synchronization job. 
 
-### API
+![image](https://user-images.githubusercontent.com/6945229/155611423-ad0381f0-7877-491f-b5ac-fb725f9c8150.png)
 
-TODO
+On the next page, you can select whether you would like to do a dry-run as well as schedule when you would like the job to run.  With a dry-run, you can see what information will be brought from ACI into Nautobot without actually performing the synchronization. The job can be run immediately, scheduled to run at a later date/time, or configured to run hourly, daily, or weekly at a specified date/time. 
+
+![image](https://user-images.githubusercontent.com/6945229/155612395-afca143d-1805-414b-a3c6-9f59566ba46a.png)
+
+Once you click **Run Job Now**, you will see the logs as the job progresses. When finished, you can click the **SSoT Sync Details** button to view the changes (or proposed changes, in case of a dry run).  
+
+![image](https://user-images.githubusercontent.com/6945229/155612666-5488e5a3-92cb-44f1-af9b-83a6cb55b379.png)
+
+![image](https://user-images.githubusercontent.com/6945229/155613017-74163984-ba88-4cb3-a1ce-0fd2430a75ee.png)
 
 ## Contributing
 
@@ -108,7 +179,7 @@ Nautobot server can now be accessed at [http://localhost:8080](http://localhost:
 
 It is typically recommended to launch the Nautobot **runserver** command in a separate shell so you can keep developing and manage the webserver separately.
 
-#### Docker Development Environment
+#### <a name="docker"></a>Docker Development Environment
 
 This project is managed by [Python Poetry](https://python-poetry.org/) and has a few requirements to setup your development environment:
 
@@ -178,6 +249,3 @@ Project documentation is generated by [mkdocs](https://www.mkdocs.org/) from the
 For any questions or comments, please check the [FAQ](FAQ.md) first and feel free to swing by the [Network to Code slack channel](https://networktocode.slack.com/) (channel #networktocode).
 Sign up [here](http://slack.networktocode.com/)
 
-## Screenshots
-
-TODO
