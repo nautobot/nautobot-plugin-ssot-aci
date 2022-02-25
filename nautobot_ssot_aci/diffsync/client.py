@@ -27,12 +27,13 @@ class RequestHTTPError(Exception):
 class AciApi:
     """Representation and methods for interacting with aci."""
 
-    def __init__(self,
+    def __init__(
+        self,
         username=PLUGIN_CFG.get("aci_username"),
         password=PLUGIN_CFG.get("aci_password"),
-        base_uri=PLUGIN_CFG.get("aci_url"), 
+        base_uri=PLUGIN_CFG.get("aci_url"),
         verify=is_truthy(PLUGIN_CFG.get("aci_verify")),
-        ):
+    ):
         """Initialization of aci class."""
         self.username = username
         self.password = password
@@ -122,9 +123,9 @@ class AciApi:
         """Retrieve the list of tenants from the ACI fabric."""
         resp = self._get("/api/node/class/fvTenant.json")
         tenant_list = [
-            { "name": data["fvTenant"]["attributes"]["name"],
-            "description": data["fvTenant"]["attributes"]["name"] 
-            } for data in resp.json()["imdata"]]
+            {"name": data["fvTenant"]["attributes"]["name"], "description": data["fvTenant"]["attributes"]["name"]}
+            for data in resp.json()["imdata"]
+        ]
         return tenant_list
 
     def get_aps(self, tenant: str) -> list:

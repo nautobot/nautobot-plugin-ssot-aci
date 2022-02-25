@@ -11,6 +11,7 @@ from diffsync.exceptions import ObjectNotCreated
 
 name = "Cisco ACI SSoT"  # pylint: disable=invalid-name
 
+
 class AciDataSource(DataSource, Job):
     """ACI SSoT Data Source."""
 
@@ -34,7 +35,7 @@ class AciDataSource(DataSource, Job):
             DataMapping("Model", None, "Device Type", reverse("dcim:devicetype_list")),
             DataMapping("Controller/Leaf/Spine OOB Mgmt IP", None, "IP Address", reverse("ipam:ipaddress_list")),
             DataMapping("Subnet", None, "Prefix", reverse("ipam:prefix_list")),
-            DataMapping("Interface", None, "Interface", reverse("dcim:interface_list"))
+            DataMapping("Interface", None, "Interface", reverse("dcim:interface_list")),
         )
 
     def sync_data(self):
@@ -63,5 +64,5 @@ class AciDataSource(DataSource, Job):
                 self.log_debug(f"Unable to create object. {err}")
             self.log_success(message="Sync complete.")
 
-jobs = [AciDataSource]
 
+jobs = [AciDataSource]

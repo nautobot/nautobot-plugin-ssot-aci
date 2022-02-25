@@ -13,12 +13,22 @@ from nautobot.dcim.models import Site
 from nautobot.dcim.models import InterfaceTemplate
 from nautobot.extras.models import Status
 from nautobot.extras.models import Tag
-from nautobot_ssot_aci.diffsync.models.base import Tenant, DeviceType, DeviceRole, Device, InterfaceTemplate, Interface, IPAddress, Prefix
+from nautobot_ssot_aci.diffsync.models.base import (
+    Tenant,
+    DeviceType,
+    DeviceRole,
+    Device,
+    InterfaceTemplate,
+    Interface,
+    IPAddress,
+    Prefix,
+)
 from nautobot_ssot_aci.constant import PLUGIN_CFG
 
 import logging
 
 logger = logging.getLogger("rq.worker")
+
 
 class NautobotTenant(Tenant):
     """Nautobot implementation of the Tenant Model."""
@@ -26,11 +36,7 @@ class NautobotTenant(Tenant):
     @classmethod
     def create(cls, diffsync, ids, attrs):
         """Create Tenant object in Nautobot."""
-        _tenant = OrmTenant(
-            name=ids["name"],
-            description=attrs["description"],
-            comments=attrs["comments"]
-        )
+        _tenant = OrmTenant(name=ids["name"], description=attrs["description"], comments=attrs["comments"])
         _tenant.tags.add(Tag.objects.get(slug=PLUGIN_CFG.get("tag").lower().replace(" ", "-")))
         _tenant.validated_save()
         return super().create(ids=ids, diffsync=diffsync, attrs=attrs)
@@ -51,6 +57,7 @@ class NautobotTenant(Tenant):
         _tenant = OrmTenant.objects.get(name=self.get_identifiers()["name"])
         _tenant.delete()
         return super().delete()
+
 
 class NautobotDeviceType(DeviceType):
     """Nautobot implementation of the DeviceType Model."""
@@ -88,16 +95,14 @@ class NautobotDeviceType(DeviceType):
         _devicetype.delete()
         return super().delete()
 
+
 class NautobotDeviceRole(DeviceRole):
     """Nautobot implementation of the DeviceRole Model."""
 
     @classmethod
     def create(cls, diffsync, ids, attrs):
         """Create DeviceRole object in Nautobot."""
-        _devicerole = OrmDeviceRole(
-            name=ids["name"],
-            description=attrs["description"]
-        )
+        _devicerole = OrmDeviceRole(name=ids["name"], description=attrs["description"])
         _devicerole.validated_save()
         return super().create(ids=ids, diffsync=diffsync, attrs=attrs)
 
@@ -116,6 +121,7 @@ class NautobotDeviceRole(DeviceRole):
         _devicerole.delete()
         return super().delete()
 
+
 class NautobotDevice(Device):
     """Nautobot implementation of the Device Model."""
 
@@ -124,14 +130,14 @@ class NautobotDevice(Device):
         """Create Device object in Nautobot."""
         _device = OrmDevice(
             name=ids["name"],
-            device_role = OrmDeviceRole.objects.get(name=ids["device_role"]),
-            device_type = OrmDeviceType.objects.get(model=ids["device_type"]),
+            device_role=OrmDeviceRole.objects.get(name=ids["device_role"]),
+            device_type=OrmDeviceType.objects.get(model=ids["device_type"]),
             serial=ids["serial"],
-            comments = attrs["comments"],
-            site = Site.objects.get(name=PLUGIN_CFG.get("site")),
-            status = Status.objects.get(name='Active'),
+            comments=attrs["comments"],
+            site=Site.objects.get(name=PLUGIN_CFG.get("site")),
+            status=Status.objects.get(name="Active"),
         )
-        _device.custom_field_data['node-id'] = attrs['node_id']
+        _device.custom_field_data["node-id"] = attrs["node_id"]
         _device.tags.add(Tag.objects.get(slug=PLUGIN_CFG.get("tag").lower().replace(" ", "-")))
         _device.validated_save()
         return super().create(ids=ids, diffsync=diffsync, attrs=attrs)
@@ -142,7 +148,7 @@ class NautobotDevice(Device):
         if attrs.get("comments"):
             _device.comments = attrs["comments"]
         if attrs.get("node_id"):
-            _device.custom_field_data['node-id'] = attrs['node_id']
+            _device.custom_field_data["node-id"] = attrs["node_id"]
         _device.validated_save()
         return super().update(attrs)
 
@@ -152,6 +158,7 @@ class NautobotDevice(Device):
         _device = OrmDevice.objects.get(name=self.get_identifiers()["name"])
         _device.delete()
         return super().delete()
+
 
 class NautobotInterfaceTemplate(InterfaceTemplate):
     """Nautobot implementation of the InterfaceTemplate Model."""
@@ -165,7 +172,7 @@ class NautobotInterfaceTemplate(InterfaceTemplate):
             name=ids["name"],
             type=ids["type"],
             description=attrs["description"],
-            mgmt_only=attrs["mgmt_only"]
+            mgmt_only=attrs["mgmt_only"],
         )
         _interfacetemplate.validated_save()
 
@@ -173,8 +180,10 @@ class NautobotInterfaceTemplate(InterfaceTemplate):
 
     def update(self, attrs):
         """Update InterfaceTemplate object in Nautobot."""
-        _interfacetemplate = OrmInterfaceTemplate.objects.get(name=self.get_identifiers()["name"],
-         device_type=OrmDeviceType.objects.get(model=self.get_identifiers()["device_type"]))
+        _interfacetemplate = OrmInterfaceTemplate.objects.get(
+            name=self.get_identifiers()["name"],
+            device_type=OrmDeviceType.objects.get(model=self.get_identifiers()["device_type"]),
+        )
         if attrs.get("description"):
             _interfacetemplate.description = attrs["description"]
         if attrs.get("mgmt_only"):
@@ -185,10 +194,13 @@ class NautobotInterfaceTemplate(InterfaceTemplate):
     def delete(self):
         """Delete InterfaceTemplate object in Nautobot."""
         self.diffsync.job.log_warning(f"Interface Template {self.name} will be deleted.")
-        _interfacetemplate = OrmInterfaceTemplate.objects.get(name=self.get_identifiers()["name"],
-          device_type=OrmDeviceType.objects.get(model=self.get_identifiers()["device_type"]))
+        _interfacetemplate = OrmInterfaceTemplate.objects.get(
+            name=self.get_identifiers()["name"],
+            device_type=OrmDeviceType.objects.get(model=self.get_identifiers()["device_type"]),
+        )
         _interfacetemplate.delete()
         return super().delete()
+
 
 class NautobotInterface(Interface):
     """Nautobot implementation of the Interface Model."""
@@ -198,9 +210,7 @@ class NautobotInterface(Interface):
         """Create Interface object in Nautobot."""
 
         _interface = OrmInterface(
-            name=ids['name'],
-            device=OrmDevice.objects.get(name=ids['device']),
-            description=attrs["description"]
+            name=ids["name"], device=OrmDevice.objects.get(name=ids["device"]), description=attrs["description"]
         )
         _interface.validated_save()
 
@@ -208,8 +218,9 @@ class NautobotInterface(Interface):
 
     def update(self, attrs):
         """Update Interface object in Nautobot."""
-        _interface = OrmInterface.objects.get(name=self.get_identifiers()["name"],
-         device=OrmDevice.objects.get(name=self.get_identifiers()["device"]))
+        _interface = OrmInterface.objects.get(
+            name=self.get_identifiers()["name"], device=OrmDevice.objects.get(name=self.get_identifiers()["device"])
+        )
         if attrs.get("description"):
             _interface.description = attrs["description"]
         _interface.validated_save()
@@ -218,8 +229,9 @@ class NautobotInterface(Interface):
     def delete(self):
         """Delete DeviceType object in Nautobot."""
         self.diffsync.job.log_warning(f"Interface {self.name} will be deleted.")
-        _interface = OrmInterface.objects.get(name=self.get_identifiers()["name"],
-          device=OrmDevice.objects.get(device=self.get_identifiers()["device"]))
+        _interface = OrmInterface.objects.get(
+            name=self.get_identifiers()["name"], device=OrmDevice.objects.get(device=self.get_identifiers()["device"])
+        )
         _interface.delete()
         return super().delete()
 
@@ -231,7 +243,7 @@ class NautobotIPAddress(IPAddress):
     def create(cls, diffsync, ids, attrs):
         """Create IPAddress object in Nautobot."""
         logging.debug(f"DEVICE: {attrs['device']}")
-        if attrs['device'] and attrs['interface']:
+        if attrs["device"] and attrs["interface"]:
             obj_type = ContentType.objects.get(model="interface")
             obj_id = OrmDevice.objects.get(name=attrs["device"]).interfaces.get(name=attrs["interface"]).id
         else:
@@ -247,13 +259,13 @@ class NautobotIPAddress(IPAddress):
             description=attrs["description"],
             tenant=tenant_name,
             assigned_object_type=obj_type,
-            assigned_object_id=obj_id
+            assigned_object_id=obj_id,
         )
         _ipaddress.tags.add(Tag.objects.get(slug=PLUGIN_CFG.get("tag").lower().replace(" ", "-")))
         _ipaddress.validated_save()
         # Update device with newly created address in the "Primary IPv4 field"
-        if attrs['device']:
-            device = OrmDevice.objects.get(name=attrs['device'])
+        if attrs["device"]:
+            device = OrmDevice.objects.get(name=attrs["device"])
             device.primary_ip4 = OrmIPAddress.objects.get(address=ids["address"])
             device.save()
         return super().create(ids=ids, diffsync=diffsync, attrs=attrs)
@@ -266,8 +278,10 @@ class NautobotIPAddress(IPAddress):
         if attrs.get("tenant"):
             _ipaddress.tenant = OrmTenant.objects.get(name=attrs["tenant"])
         if attrs.get("device") and attrs.get("interface"):
-            _ipaddress.assigned_object_type=ContentType.objects.get(model="interface")
-            _ipaddress.assigned_object_id=OrmDevice.objects.get(name=attrs["device"]).interfaces.get(name=attrs["interface"]).id
+            _ipaddress.assigned_object_type = ContentType.objects.get(model="interface")
+            _ipaddress.assigned_object_id = (
+                OrmDevice.objects.get(name=attrs["device"]).interfaces.get(name=attrs["interface"]).id
+            )
         _ipaddress.validated_save()
         return super().update(attrs)
 
@@ -277,6 +291,7 @@ class NautobotIPAddress(IPAddress):
         _ipaddress = OrmIPAddress.objects.get(address=self.get_identifiers()["address"])
         _ipaddress.delete()
         return super().delete()
+
 
 class NautobotPrefix(Prefix):
     """Nautobot implementation of the Prefix Model."""
@@ -289,7 +304,7 @@ class NautobotPrefix(Prefix):
             status=Status.objects.get(name=ids["status"]),
             description=attrs["description"],
             tenant=OrmTenant.objects.get(name=attrs["tenant"]),
-            site = Site.objects.get(name=PLUGIN_CFG.get("site"))
+            site=Site.objects.get(name=PLUGIN_CFG.get("site")),
         )
         _prefix.tags.add(Tag.objects.get(slug=PLUGIN_CFG.get("tag").lower().replace(" ", "-")))
         _prefix.validated_save()
@@ -301,7 +316,7 @@ class NautobotPrefix(Prefix):
         if attrs.get("description"):
             _prefix.description = attrs["description"]
         if attrs.get("tenant"):
-            _prefix.tenant=OrmTenant.objects.get(name=attrs["tenant"])
+            _prefix.tenant = OrmTenant.objects.get(name=attrs["tenant"])
         _prefix.validated_save()
         return super().update(attrs)
 

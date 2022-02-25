@@ -13,6 +13,7 @@ from nautobot.extras.plugins import PluginConfig
 
 from nautobot_ssot_aci.signals import aci_create_manufacturer, aci_create_site, aci_create_tag, aci_create_custom_field
 
+
 class NautobotSsotAciConfig(PluginConfig):
     """Plugin configuration for the nautobot_ssot_aci plugin."""
 
@@ -25,11 +26,7 @@ class NautobotSsotAciConfig(PluginConfig):
     required_settings = []
     min_version = "1.1.0"
     max_version = "1.9999"
-    default_settings = {'tag': 'ACI',
-                        'tag_color': 'FF3333',
-                        'manufacturer_name': 'Cisco',
-                        'site': 'Data Center'
-                        }
+    default_settings = {"tag": "ACI", "tag_color": "FF3333", "manufacturer_name": "Cisco", "site": "Data Center"}
     caching_config = {}
 
     def ready(self):

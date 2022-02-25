@@ -264,36 +264,35 @@ PAGINATE_COUNT = int(os.getenv("NAUTOBOT_PAGINATE_COUNT", 50))
 PLUGINS = [
     "nautobot_ssot",
     "nautobot_ssot_aci",
-    ]
+]
 
 # Plugins configuration settings. These settings are used by various plugins that the user may have installed.
 # Each key in the dictionary is the name of an installed plugin and its value is a dictionary of settings.
 PLUGINS_CONFIG = {
     "nautobot_ssot": {
         "hide_example_jobs": True,
-
     },
-        "nautobot_ssot_aci": {
+    "nautobot_ssot_aci": {
         # URL and credentials should be configured as environment variables on the host system
-        'aci_url': os.getenv("NAUTOBOT_ACI_URL"),
-        'aci_username': os.getenv("NAUTOBOT_ACI_USERNAME"),
-        'aci_password': os.getenv("NAUTOBOT_ACI_PASSWORD"),
-        'aci_verify': os.getenv("NAUTOBOT_ACI_VERIFY_SSL"),
+        "aci_url": os.getenv("NAUTOBOT_ACI_URL"),
+        "aci_username": os.getenv("NAUTOBOT_ACI_USERNAME"),
+        "aci_password": os.getenv("NAUTOBOT_ACI_PASSWORD"),
+        "aci_verify": os.getenv("NAUTOBOT_ACI_VERIFY_SSL"),
         # Tag which will be created and applied to all synchronized objects.
-        'tag': 'NTC_ACI',
-        'tag_color': 'FF3333',
+        "tag": "NTC_ACI",
+        "tag_color": "FF3333",
         # Manufacturer name. Specify existing, or a new one with this name will be created.
-        'manufacturer_name': 'Cisco',
+        "manufacturer_name": "Cisco",
         # Exclude any tenants you would not like to bring over from ACI.
-        'ignore_tenants': ['common', 'mgmt', 'infra'],
+        "ignore_tenants": ["common", "mgmt", "infra"],
         # Enter a prefix to be prepended to the tenant, for example the name of the ACI fabric.
-        # A prefix to append to the front of a tenant name.  Set to None if no prefix is desired. 
-        'tenant_prefix': 'ntc_aci',
+        # A prefix to append to the front of a tenant name.  Set to None if no prefix is desired.
+        "tenant_prefix": "ntc_aci",
         # The below value will appear in the Comments field on objects created in Nautobot
-        'comments': 'Created by ACI SSoT Plugin',
+        "comments": "Created by ACI SSoT Plugin",
         # Site to associate objects. Specify existing, or a new site with this name will be created.
-        'site': 'Data Center'
-    }
+        "site": "Data Center",
+    },
 }
 
 # When determining the primary IP address for a device, IPv6 is preferred over IPv4 by default. Set this to True to
