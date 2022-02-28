@@ -8,8 +8,8 @@ import re
 import requests
 import urllib3
 from nautobot.core.settings_funcs import is_truthy
-from .utils import tenant_from_dn, ap_from_dn
 from nautobot_ssot_aci.constant import PLUGIN_CFG
+from .utils import tenant_from_dn, ap_from_dn
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -123,7 +123,10 @@ class AciApi:
         """Retrieve the list of tenants from the ACI fabric."""
         resp = self._get("/api/node/class/fvTenant.json")
         tenant_list = [
-            {"name": data["fvTenant"]["attributes"]["name"], "description": data["fvTenant"]["attributes"]["name"]}
+            {
+                "name": data["fvTenant"]["attributes"]["name"],
+                "description": data["fvTenant"]["attributes"]["descr"],
+            }
             for data in resp.json()["imdata"]
         ]
         return tenant_list
@@ -327,7 +330,7 @@ class AciApi:
             bd_dict[data["fvBD"]["attributes"]["name"]]["mac"] = data["fvBD"]["attributes"]["mac"]
             bd_dict[data["fvBD"]["attributes"]["name"]]["l2unicast"] = data["fvBD"]["attributes"]["unkMacUcastAct"]
 
-        for bd in bd_dict.keys():
+        for bd in bd_dict:
             # get the containing VRF
             resp = self._get(
                 f"/api/node/mo/uni/tn-{bd_dict[bd]['tenant']}/BD-{bd}.json?query-target=children&target-subtree-class=fvRsCtx"
