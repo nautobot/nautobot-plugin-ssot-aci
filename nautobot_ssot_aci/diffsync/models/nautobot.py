@@ -1,4 +1,6 @@
 """Nautobot Models for Cisco ACI integration with SSoT plugin."""
+
+import logging
 from django.contrib.contenttypes.models import ContentType
 from nautobot.tenancy.models import Tenant as OrmTenant
 from nautobot.dcim.models import DeviceType as OrmDeviceType
@@ -10,7 +12,6 @@ from nautobot.ipam.models import IPAddress as OrmIPAddress
 from nautobot.ipam.models import Prefix as OrmPrefix
 from nautobot.dcim.models import Manufacturer
 from nautobot.dcim.models import Site
-from nautobot.dcim.models import InterfaceTemplate
 from nautobot.extras.models import Status
 from nautobot.extras.models import Tag
 from nautobot_ssot_aci.diffsync.models.base import (
@@ -25,7 +26,6 @@ from nautobot_ssot_aci.diffsync.models.base import (
 )
 from nautobot_ssot_aci.constant import PLUGIN_CFG
 
-import logging
 
 logger = logging.getLogger("rq.worker")
 
@@ -166,7 +166,6 @@ class NautobotInterfaceTemplate(InterfaceTemplate):
     @classmethod
     def create(cls, diffsync, ids, attrs):
         """Create InterfaceTemplate object in Nautobot."""
-
         _interfacetemplate = OrmInterfaceTemplate(
             device_type=OrmDeviceType.objects.get(model=ids["device_type"]),
             name=ids["name"],

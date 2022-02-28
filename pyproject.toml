@@ -82,6 +82,10 @@ no-docstring-rgx="^(_|test_|Meta$)"
 disable = """,
     line-too-long,
     bad-continuation,
+    logging-fstring-interpolation,
+    invalid-name,
+    consider-using-dict-items,
+    duplicate-code
     """
 
 [tool.pylint.miscellaneous]
@@ -101,7 +105,9 @@ match-dir = "(?!tests|migrations|development)[^\\.].*"
 # My docstring is on the line after the opening quotes instead of on the same line as them.
 # """
 # We've discussed and concluded that we consider this to be a valid style choice.
-add_ignore = "D212"
+#
+# D202 is now showing up and it conflicts with Black, so adding it to the ignore
+add_ignore = "D212, D202"
 
 [build-system]
 requires = ["poetry_core>=1.0.0"]

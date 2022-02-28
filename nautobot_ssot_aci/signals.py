@@ -1,8 +1,6 @@
 """Post Migrate Welcome Wizard Script."""
-from nautobot_ssot_aci.constant import PLUGIN_CFG
-
-# from django.contrib.contenttypes.models import ContentType
 import logging
+from nautobot_ssot_aci.constant import PLUGIN_CFG
 
 logger = logging.getLogger("rq.worker")
 
@@ -37,7 +35,7 @@ def aci_create_site(apps, **kwargs):
 def aci_create_custom_field(apps, **kwargs):
     """Add custom field NodeId."""
     cf_model = apps.get_model("extras", "CustomField")
-    logger.info(f"Creating Custom Field: node-id")
+    logger.info("Creating Custom Field: node-id")
     cf_model.objects.update_or_create(
         name="node-id",
         label="Node Id",

@@ -5,7 +5,7 @@ from unittest.mock import patch, Mock
 from nautobot_ssot_aci.diffsync.client import AciApi, RequestHTTPError
 
 
-class TestAciMethods(unittest.TestCase):
+class TestAciMethods(unittest.TestCase):  # pylint: disable=too-many-public-methods
     """Test AciApi object methods."""
 
     def setUp(self):
@@ -22,15 +22,18 @@ class TestAciMethods(unittest.TestCase):
         mock_fvTenant.status_code = 200
         mock_fvTenant.json.return_value = {
             "imdata": [
-                {"fvTenant": {"attributes": {"name": "test_tenant_1"}}},
-                {"fvTenant": {"attributes": {"name": "test_tenant_2"}}},
+                {"fvTenant": {"attributes": {"name": "test_tenant_1", "descr": "test_desc_1"}}},
+                {"fvTenant": {"attributes": {"name": "test_tenant_2", "descr": "test_desc_2"}}},
             ]
         }
 
         mocked_login.return_value = self.mock_login
         mocked_handle_request.return_value = mock_fvTenant
 
-        assert self.aci_obj.get_tenants() == ["test_tenant_1", "test_tenant_2"]  # nosec
+        assert self.aci_obj.get_tenants() == [
+            {"name": "test_tenant_1", "description": "test_desc_1"},
+            {"name": "test_tenant_2", "description": "test_desc_2"},
+        ]  # nosec
 
     @patch.object(AciApi, "_handle_request")
     @patch.object(AciApi, "_login")
@@ -325,7 +328,7 @@ class TestAciMethods(unittest.TestCase):
         mocked_get_bd_subnet,
         mocked_get_contract_filters,
         mocked_get_static_path,
-    ):
+    ):  # pylint: disable=too-many-arguments
         """Test get_epg_details method."""
         mocked_epg = Mock()
         mocked_epg.json.return_value = {

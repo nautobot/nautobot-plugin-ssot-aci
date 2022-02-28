@@ -38,7 +38,7 @@ class DeviceType(DiffSyncModel):
     comments: Optional[str]
     u_height: Optional[int]
 
-    interface_templates: List["InterfaceTemplate"] = list()
+    interface_templates: List["InterfaceTemplate"] = []
 
 
 class DeviceRole(DiffSyncModel):
@@ -72,7 +72,7 @@ class Device(DiffSyncModel):
     device_role: str
     serial: str
     comments: Optional[str]
-    interfaces: List["Interface"] = list()
+    interfaces: List["Interface"] = []
     node_id: Optional[int]
 
 

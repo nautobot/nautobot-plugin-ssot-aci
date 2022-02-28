@@ -1,4 +1,10 @@
+"""Diffsync Adapter for Nautobot."""
+
+import logging
 from diffsync import DiffSync
+from nautobot.tenancy.models import Tenant
+from nautobot.dcim.models import DeviceType, DeviceRole, Device, InterfaceTemplate, Interface
+from nautobot.ipam.models import IPAddress, Prefix
 from nautobot_ssot_aci.diffsync.models import NautobotTenant
 from nautobot_ssot_aci.diffsync.models import NautobotDeviceType
 from nautobot_ssot_aci.diffsync.models import NautobotDeviceRole
@@ -8,10 +14,6 @@ from nautobot_ssot_aci.diffsync.models import NautobotInterface
 from nautobot_ssot_aci.diffsync.models import NautobotIPAddress
 from nautobot_ssot_aci.diffsync.models import NautobotPrefix
 
-from nautobot.tenancy.models import Tenant
-from nautobot.dcim.models import DeviceType, DeviceRole, Device, InterfaceTemplate, Interface
-from nautobot.ipam.models import IPAddress, Prefix
-import logging
 
 logger = logging.getLogger("rq.worker")
 

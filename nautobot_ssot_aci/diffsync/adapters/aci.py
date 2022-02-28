@@ -1,3 +1,8 @@
+"""Diffsync Adapter for Cisco ACI."""
+
+import logging
+import os
+from ipaddress import IPv4Network
 from diffsync import DiffSync
 from nautobot_ssot_aci.constant import PLUGIN_CFG
 from nautobot_ssot_aci.diffsync.models import NautobotTenant
@@ -10,9 +15,7 @@ from nautobot_ssot_aci.diffsync.models import NautobotIPAddress
 from nautobot_ssot_aci.diffsync.models import NautobotPrefix
 from nautobot_ssot_aci.diffsync.client import AciApi
 from nautobot_ssot_aci.diffsync.utils import load_yamlfile
-from ipaddress import IPv4Network
-import logging
-import os
+
 
 logger = logging.getLogger("rq.worker")
 
@@ -80,7 +83,7 @@ class AciAdapter(DiffSync):
         logger.info(f"ACI Node List: {node_dict}")
         # Leaf/Spine management IP addresses
         for node in node_dict.values():
-            if node["oob_ip"] and not node["oob_ip"] == "0.0.0.0":
+            if node["oob_ip"] and not node["oob_ip"] == "0.0.0.0":  # nosec
                 new_ipaddress = self.ip_address(
                     address=f"{node['oob_ip']}/32",
                     device=node["name"],
@@ -92,7 +95,7 @@ class AciAdapter(DiffSync):
         controller_dict = self.conn.get_controllers()
         # Controller IP addresses
         for controller in controller_dict.values():
-            if controller["oob_ip"] and not controller["oob_ip"] == "0.0.0.0":
+            if controller["oob_ip"] and not controller["oob_ip"] == "0.0.0.0":  # nosec
                 new_ipaddress = self.ip_address(
                     address=f"{controller['oob_ip']}/32",
                     device=controller["name"],
@@ -137,7 +140,7 @@ class AciAdapter(DiffSync):
 
     def load_devicetypes(self):
         """Load device types from ACI device data."""
-        device_types = {self.devices[key]["model"] for key in self.devices.keys()}
+        device_types = {self.devices[key]["model"] for key in self.devices}
         for _devicetype in device_types:
             if f"{_devicetype}.yaml" in os.listdir("nautobot_ssot_aci/diffsync/device-types"):
                 device_specs = load_yamlfile(
@@ -159,7 +162,7 @@ class AciAdapter(DiffSync):
 
     def load_interfacetemplates(self):
         """Load interface templates from YAML files."""
-        device_types = {self.devices[key]["model"] for key in self.devices.keys()}
+        device_types = {self.devices[key]["model"] for key in self.devices}
         for _devicetype in device_types:
             if f"{_devicetype}.yaml" in os.listdir("nautobot_ssot_aci/diffsync/device-types"):
                 device_specs = load_yamlfile(
@@ -194,14 +197,14 @@ class AciAdapter(DiffSync):
 
     def load_deviceroles(self):
         """Load device roles from ACI device data."""
-        device_roles = {self.devices[key]["role"] for key in self.devices.keys()}
+        device_roles = {self.devices[key]["role"] for key in self.devices}
         for _devicerole in device_roles:
             new_devicerole = self.device_role(name=_devicerole, description=PLUGIN_CFG.get("comments", ""))
             self.add(new_devicerole)
 
     def load_devices(self):
         """Load devices from ACI device data."""
-        for key in self.devices.keys():
+        for key in self.devices:
             if f"{self.devices[key]['model']}.yaml" in os.listdir("nautobot_ssot_aci/diffsync/device-types"):
                 device_specs = load_yamlfile(
                     os.path.join(

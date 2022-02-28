@@ -4,10 +4,10 @@ from django.templatetags.static import static
 from django.urls import reverse
 from nautobot.extras.jobs import BooleanVar, Job
 from nautobot_ssot.jobs.base import DataMapping, DataSource
-from nautobot_ssot_aci.diffsync.adapters.aci import AciAdapter
-from nautobot_ssot_aci.diffsync.adapters.nautobot import NautobotAdapter
 from diffsync import DiffSyncFlags
 from diffsync.exceptions import ObjectNotCreated
+from nautobot_ssot_aci.diffsync.adapters.aci import AciAdapter
+from nautobot_ssot_aci.diffsync.adapters.nautobot import NautobotAdapter
 
 name = "Cisco ACI SSoT"  # pylint: disable=invalid-name
 

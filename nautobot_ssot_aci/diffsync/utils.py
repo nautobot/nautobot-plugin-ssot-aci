@@ -20,6 +20,6 @@ def ap_from_dn(dn):
 
 def load_yamlfile(filename):
     """Load a YAML file to a Dict."""
-    with open(filename, "r") as fn:
+    with open(filename, "r", encoding="utf-8") as fn:
         yaml_file = yaml.safe_load(fn)
     return yaml_file
