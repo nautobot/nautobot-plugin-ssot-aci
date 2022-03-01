@@ -208,12 +208,25 @@ class NautobotInterface(Interface):
     def create(cls, diffsync, ids, attrs):
         """Create Interface object in Nautobot."""
 
-        _interface = OrmInterface(
-            name=ids["name"], device=OrmDevice.objects.get(name=ids["device"]), description=attrs["description"]
-        )
-        _interface.validated_save()
+        q = OrmInterface.objects.filter(name=ids["name"], device=OrmDevice.objects.get(name=ids["device"]))
+        if q.exists():
+            # If interface already exists, then update it instead.
+            # This will be the case when first creating devices and the interface templates are created.
+            # Without this check, the plugin will attempt to create interfaces that were already created as part of the interface template.
+            # This results in a ValidationError: 'Interface with this Device and Name already exists.'
+            _interface = OrmInterface.objects.get(name=ids["name"], device=OrmDevice.objects.get(name=ids["device"]))
+            if attrs.get("description"):
+                _interface.description = attrs["description"]
+            _interface.validated_save()
 
-        return super().create(ids=ids, diffsync=diffsync, attrs=attrs)
+            return super().create(ids=ids, diffsync=diffsync, attrs=attrs)
+        else:
+            _interface = OrmInterface(
+                name=ids["name"], device=OrmDevice.objects.get(name=ids["device"]), description=attrs["description"]
+            )
+            _interface.validated_save()
+
+            return super().create(ids=ids, diffsync=diffsync, attrs=attrs)
 
     def update(self, attrs):
         """Update Interface object in Nautobot."""
