@@ -219,14 +219,13 @@ class NautobotInterface(Interface):
                 _interface.description = attrs["description"]
             _interface.validated_save()
 
-            return super().create(ids=ids, diffsync=diffsync, attrs=attrs)
         else:
             _interface = OrmInterface(
                 name=ids["name"], device=OrmDevice.objects.get(name=ids["device"]), description=attrs["description"]
             )
             _interface.validated_save()
 
-            return super().create(ids=ids, diffsync=diffsync, attrs=attrs)
+        return super().create(ids=ids, diffsync=diffsync, attrs=attrs)
 
     def update(self, attrs):
         """Update Interface object in Nautobot."""
