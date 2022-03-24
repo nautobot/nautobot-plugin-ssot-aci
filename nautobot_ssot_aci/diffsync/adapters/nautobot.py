@@ -124,7 +124,7 @@ class NautobotAdapter(DiffSync):
                 device_role=nbdevice.device_role.name,
                 serial=nbdevice.serial,
                 comments=nbdevice.comments,
-                node_id=nbdevice.custom_field_data["node-id"],
+                node_id=nbdevice.custom_field_data["node_id"],
             )
             self.add(_device)
 
@@ -164,12 +164,12 @@ class NautobotAdapter(DiffSync):
 
     def load(self):
         """Method to load models with data from Nautbot."""
-        self.load_tenants()
-        self.load_vrfs()
+        # self.load_tenants()
+        # self.load_vrfs()
+        # self.load_prefixes()
+        # self.load_ipaddresses()
+        # self.load_interfacetemplates()
         self.load_deviceroles()
         self.load_devicetypes()
-        self.load_interfacetemplates()
         self.load_devices()
-        self.load_prefixes()
-        self.load_ipaddresses()
         self.load_interfaces()

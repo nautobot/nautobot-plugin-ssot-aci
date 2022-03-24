@@ -10,7 +10,7 @@ import urllib3
 import json
 from nautobot.core.settings_funcs import is_truthy
 from nautobot_ssot_aci.constant import PLUGIN_CFG
-from .utils import tenant_from_dn, ap_from_dn
+from .utils import tenant_from_dn, ap_from_dn, node_from_dn, pod_from_dn
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -368,6 +368,7 @@ class AciApi:
                 node_dict[node_id]["role"] = node["fabricNode"]["attributes"]["role"]
                 node_dict[node_id]["serial"] = node["fabricNode"]["attributes"]["serial"]
                 node_dict[node_id]["fabric_ip"] = node["fabricNode"]["attributes"]["address"]
+
         resp = self._get('/api/class/topSystem.json?query-target-filter=ne(topSystem.role,"controller")')
 
         for node in resp.json()["imdata"]:
@@ -375,25 +376,26 @@ class AciApi:
             node_dict[node_id]["pod"] = node["topSystem"]["attributes"]["podId"]
             node_dict[node_id]["oob_ip"] = node["topSystem"]["attributes"]["oobMgmtAddr"]
             node_dict[node_id]["uptime"] = node["topSystem"]["attributes"]["systemUpTime"]
+
+        resp = self._get("/api/node/class/eqptExtCh.json")
+
+        for fex in resp.json()["imdata"]:
+            parent_node_id = node_from_dn(fex["eqptExtCh"]["attributes"]["dn"])
+            fex_id = fex["eqptExtCh"]["attributes"]["id"]
+            node_id = f"{parent_node_id}{fex_id}"
+            node_dict[node_id] = {}
+            node_dict[node_id]["name"] = node_dict[parent_node_id]["name"] + "-" + fex["eqptExtCh"]["attributes"]["id"]
+            node_dict[node_id]["model"] = fex["eqptExtCh"]["attributes"]["model"]
+            node_dict[node_id]["role"] = "fex"
+            node_dict[node_id]["serial"] = fex["eqptExtCh"]["attributes"]["ser"]
+            node_dict[node_id]["descr"] = fex["eqptExtCh"]["attributes"]["descr"]
+            node_dict[node_id]["parent_id"] = parent_node_id
+            node_dict[node_id]["fex_id"] = fex["eqptExtCh"]["attributes"]["id"]
+            node_dict[node_id]["pod"] = pod_from_dn(fex["eqptExtCh"]["attributes"]["dn"])
         return node_dict
 
-    def get_fexes(self) -> dict:
-        """Return list of fex nodes in the ACI fabric."""
-        resp = self._get("/api/node/class/eqptExtCh.json")
-        fex_dict = {}
-        for node in resp.json()["imdata"]:
-            node_id = ""
-            fex_id = node["fabricNode"]["attributes"]["id"]
-            fex_dict[node_id] = {}
-            fex_dict[node_id]["name"] = node["fabricNode"]["attributes"]["name"]
-            fex_dict[node_id]["model"] = node["fabricNode"]["attributes"]["model"]
-            fex_dict[node_id]["role"] = node["fabricNode"]["attributes"]["role"]
-            fex_dict[node_id]["serial"] = node["fabricNode"]["attributes"]["ser"]
-            fex_dict[node_id]["fabric_ip"] = node["fabricNode"]["attributes"]["address"]
-        return fex_dict
-
     def get_controllers(self) -> dict:
-        """Return list of controllers nodes in the ACI fabric."""
+        """Return list of Leaf/Spine nodes in the ACI fabric."""
         resp = self._get('/api/class/fabricNode.json?query-target-filter=eq(fabricNode.role,"controller")')
         node_dict = {}
         for node in resp.json()["imdata"]:
@@ -435,11 +437,40 @@ class AciApi:
         """Get interfaces on a specified leaf with filtering by up/down state."""
         if state == "all":
             resp = self._get(
-                f"/api/node/class/topology/pod-{pod_id}/node-{node_id}/l1PhysIf.json?rsp-subtree=children&rsp-subtree-class=ethpmPhysIf&order-by=l1PhysIf.id"
+                f'/api/node/class/topology/pod-{pod_id}/node-{node_id}/l1PhysIf.json?rsp-subtree=children&rsp-subtree-class=ethpmPhysIf&query-target-filter=wcard(l1PhysIf.id, "eth1/")&order-by=l1PhysIf.id'
             )
         else:
             resp = self._get(
                 f'/api/node/class/topology/pod-{pod_id}/node-{node_id}/l1PhysIf.json?rsp-subtree=children&rsp-subtree-class=ethpmPhysIf&rsp-subtree-filter=eq(ethpmPhysIf.operSt,"{state}")&order-by=l1PhysIf.id'
+            )
+
+        intf_dict = {}
+        for intf in resp.json()["imdata"]:
+            if "children" in intf["l1PhysIf"]:
+                intf_id = intf["l1PhysIf"]["attributes"]["id"]
+                intf_dict[intf_id] = {}
+                intf_dict[intf_id]["descr"] = intf["l1PhysIf"]["attributes"]["descr"]
+                intf_dict[intf_id]["speed"] = intf["l1PhysIf"]["attributes"]["speed"]
+                intf_dict[intf_id]["bw"] = intf["l1PhysIf"]["attributes"]["bw"]
+                intf_dict[intf_id]["usage"] = intf["l1PhysIf"]["attributes"]["usage"]
+                intf_dict[intf_id]["layer"] = intf["l1PhysIf"]["attributes"]["layer"]
+                intf_dict[intf_id]["mode"] = intf["l1PhysIf"]["attributes"]["mode"]
+                intf_dict[intf_id]["switchingSt"] = intf["l1PhysIf"]["attributes"]["switchingSt"]
+                intf_dict[intf_id]["state"] = intf["l1PhysIf"]["children"][0]["ethpmPhysIf"]["attributes"]["operSt"]
+                intf_dict[intf_id]["state_reason"] = intf["l1PhysIf"]["children"][0]["ethpmPhysIf"]["attributes"][
+                    "operStQual"
+                ]
+        return intf_dict
+
+    def get_interfaces_fex(self, pod_id, parent_id, fex_id, state):
+        """Get interfaces on a specified leaf with filtering by up/down state."""
+        if state == "all":
+            resp = self._get(
+                f'/api/node/class/topology/pod-{pod_id}/node-{parent_id}/l1PhysIf.json?rsp-subtree=children&rsp-subtree-class=ethpmPhysIf&query-target-filter=wcard(l1PhysIf.id, "{fex_id}")&order-by=l1PhysIf.id'
+            )
+        else:
+            resp = self._get(
+                f'/api/node/class/topology/pod-{pod_id}/node-{parent_id}/l1PhysIf.json?rsp-subtree=children&rsp-subtree-class=ethpmPhysIf&rsp-subtree-filter=eq(ethpmPhysIf.operSt,"{state}")&order-by=l1PhysIf.id'
             )
 
         intf_dict = {}

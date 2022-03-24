@@ -6,6 +6,18 @@ import yaml
 logger = logging.getLogger("rq.worker")
 
 
+def pod_from_dn(dn):
+    """Match an ACI pod_id in the Distiguished Name (DN)."""
+    pattern = r"/pod-(?P<pod>\d+)"
+    return (re.search(pattern, dn)).group("pod")
+
+
+def node_from_dn(dn):
+    """Match an ACI node_id in the Distiguished Name (DN)."""
+    pattern = r"/node-(?P<node>\d+)"
+    return (re.search(pattern, dn)).group("node")
+
+
 def tenant_from_dn(dn):
     """Match an ACI tenant in the Distiguished Name (DN)."""
     pattern = "tn-[A-Za-z0-9\-\_]+"  # noqa: W605  # pylint: disable=anomalous-backslash-in-string

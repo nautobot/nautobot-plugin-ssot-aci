@@ -3,6 +3,7 @@ from typing import List, Optional
 from diffsync import DiffSyncModel
 from django_prometheus.models import ExportModelOperationsMixin
 
+
 class Tenant(DiffSyncModel):
     """Tenant model for DiffSync."""
 
@@ -15,7 +16,7 @@ class Tenant(DiffSyncModel):
     comments: Optional[str]
 
 
-class Vrf(ExportModelOperationsMixin('ssot-vrf'), DiffSyncModel):
+class Vrf(DiffSyncModel):
     """VRF model for DiffSync."""
 
     _modelname = "vrf"
@@ -147,10 +148,7 @@ class Prefix(DiffSyncModel):
         "tenant",
         "status",
     )
-    _attributes = (
-        "description",
-        "vrf"
-    )
+    _attributes = ("description", "vrf")
 
     prefix: str
     status: str
