@@ -9,8 +9,8 @@ import requests
 import urllib3
 from nautobot.core.settings_funcs import is_truthy
 from nautobot_ssot_aci.constant import PLUGIN_CFG
-from .utils import tenant_from_dn, ap_from_dn, node_from_dn, pod_from_dn, fex_id_from_dn, interface_from_dn
-
+from .utils import tenant_from_dn, ap_from_dn, node_from_dn, pod_from_dn
+from jmespath
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -432,61 +432,117 @@ class AciApi:
             node_dict[sn]["supported"] = node["dhcpClient"]["attributes"]["supported"]
         return node_dict
 
-    def get_interfaces(self, nodes):
+    def get_interfaces(self, pod_id, node_id, interface_sync, parent_id=None, fex_id=None):
         """Get interfaces on a specified leaf with filtering by up/down state."""
-        resp = self._get(
-            f"/api/node/class/l1PhysIf.json?rsp-subtree=full&rsp-subtree-class=ethpmPhysIf,ethpmFcot&order-by=l1PhysIf.id"
-        )
-        intf_dict = {}
-        for item in nodes:
-            intf_dict[item] = {}
-
-        for intf in resp.json()["imdata"]:
-            if int(fex_id_from_dn(intf["l1PhysIf"]["attributes"]["dn"])) < 100:
-                switch_id = node_from_dn(intf["l1PhysIf"]["attributes"]["dn"])
-            else:
-                switch_id = node_from_dn(intf["l1PhysIf"]["attributes"]["dn"]) + fex_id_from_dn(
-                    intf["l1PhysIf"]["attributes"]["dn"]
+        if interface_sync == "all":
+            if parent_id is None:
+                resp = self._get(
+                    f'/api/node/class/topology/pod-{pod_id}/node-{node_id}/l1PhysIf.json?rsp-subtree=full&rsp-subtree-class=ethpmPhysIf,ethpmFcot&query-target-filter=wcard(l1PhysIf.id, "eth1/")&order-by=l1PhysIf.id'
                 )
-            port_name = interface_from_dn(intf["l1PhysIf"]["attributes"]["dn"])
+            else:
+                resp = self._get(
+                    f'/api/node/class/topology/pod-{pod_id}/node-{parent_id}/l1PhysIf.json?rsp-subtree=full&rsp-subtree-class=ethpmPhysIf,ethpmFcot&query-target-filter=wcard(l1PhysIf.id, "{fex_id}")&order-by=l1PhysIf.id'
+                )
+        else:
+            if parent_id is None:
+                resp = self._get(
+                    f'/api/node/class/topology/pod-{pod_id}/node-{node_id}/l1PhysIf.json?rsp-subtree=full&rsp-subtree-class=ethpmPhysIf,ethpmFcot&rsp-subtree-filter=eq(ethpmPhysIf.operSt,"{interface_sync}")&order-by=l1PhysIf.id'
+                )
+            else:
+                resp = self._get(
+                    f'/api/node/class/topology/pod-{pod_id}/node-{parent_id}/l1PhysIf.json?rsp-subtree=full&rsp-subtree-class=ethpmPhysIf,ethpmFcot&rsp-subtree-filter=eq(ethpmPhysIf.operSt,"{interface_sync}")&order-by=l1PhysIf.id'
+                )
+
+        intf_dict = {}
+        for intf in resp.json()["imdata"]:
             if "children" in intf["l1PhysIf"]:
-                intf_dict[switch_id][port_name] = {}
-                intf_dict[switch_id][port_name]["descr"] = intf["l1PhysIf"]["attributes"]["descr"]
-                intf_dict[switch_id][port_name]["speed"] = intf["l1PhysIf"]["attributes"]["speed"]
-                intf_dict[switch_id][port_name]["bw"] = intf["l1PhysIf"]["attributes"]["bw"]
-                intf_dict[switch_id][port_name]["usage"] = intf["l1PhysIf"]["attributes"]["usage"]
-                intf_dict[switch_id][port_name]["layer"] = intf["l1PhysIf"]["attributes"]["layer"]
-                intf_dict[switch_id][port_name]["mode"] = intf["l1PhysIf"]["attributes"]["mode"]
-                intf_dict[switch_id][port_name]["switchingSt"] = intf["l1PhysIf"]["attributes"]["switchingSt"]
-                intf_dict[switch_id][port_name]["state"] = intf["l1PhysIf"]["children"][0]["ethpmPhysIf"]["attributes"][
-                    "operSt"
+                intf_id = intf["l1PhysIf"]["attributes"]["id"]
+                intf_dict[intf_id] = {}
+                intf_dict[intf_id]["descr"] = intf["l1PhysIf"]["attributes"]["descr"]
+                intf_dict[intf_id]["speed"] = intf["l1PhysIf"]["attributes"]["speed"]
+                intf_dict[intf_id]["bw"] = intf["l1PhysIf"]["attributes"]["bw"]
+                intf_dict[intf_id]["usage"] = intf["l1PhysIf"]["attributes"]["usage"]
+                intf_dict[intf_id]["layer"] = intf["l1PhysIf"]["attributes"]["layer"]
+                intf_dict[intf_id]["mode"] = intf["l1PhysIf"]["attributes"]["mode"]
+                intf_dict[intf_id]["switchingSt"] = intf["l1PhysIf"]["attributes"]["switchingSt"]
+                intf_dict[intf_id]["state"] = intf["l1PhysIf"]["children"][0]["ethpmPhysIf"]["attributes"]["operSt"]
+                intf_dict[intf_id]["state_reason"] = intf["l1PhysIf"]["children"][0]["ethpmPhysIf"]["attributes"][
+                    "operStQual"
                 ]
-                intf_dict[switch_id][port_name]["state_reason"] = intf["l1PhysIf"]["children"][0]["ethpmPhysIf"][
-                    "attributes"
-                ]["operStQual"]
-                intf_dict[switch_id][port_name]["gbic_sn"] = intf["l1PhysIf"]["children"][0]["ethpmPhysIf"]["children"][
-                    0
-                ]["ethpmFcot"]["attributes"]["guiSN"]
-                intf_dict[switch_id][port_name]["gbic_vendor"] = intf["l1PhysIf"]["children"][0]["ethpmPhysIf"][
-                    "children"
-                ][0]["ethpmFcot"]["attributes"]["guiName"]
-                intf_dict[switch_id][port_name]["gbic_type"] = intf["l1PhysIf"]["children"][0]["ethpmPhysIf"][
-                    "children"
-                ][0]["ethpmFcot"]["attributes"]["guiPN"]
+                intf_dict[intf_id]["gbic_sn"] = intf["l1PhysIf"]["children"][0]["ethpmPhysIf"]["children"][0][
+                    "ethpmFcot"
+                ]["attributes"]["guiSN"]
+                intf_dict[intf_id]["gbic_vendor"] = intf["l1PhysIf"]["children"][0]["ethpmPhysIf"]["children"][0][
+                    "ethpmFcot"
+                ]["attributes"]["guiName"]
+                intf_dict[intf_id]["gbic_type"] = intf["l1PhysIf"]["children"][0]["ethpmPhysIf"]["children"][0][
+                    "ethpmFcot"
+                ]["attributes"]["guiPN"]
                 if (
                     intf["l1PhysIf"]["children"][0]["ethpmPhysIf"]["children"][0]["ethpmFcot"]["attributes"][
                         "guiCiscoPID"
                     ]
                     != ""
                 ):
-                    intf_dict[switch_id][port_name]["gbic_model"] = intf["l1PhysIf"]["children"][0]["ethpmPhysIf"][
-                        "children"
-                    ][0]["ethpmFcot"]["attributes"]["typeName"]
+                    intf_dict[intf_id]["gbic_model"] = intf["l1PhysIf"]["children"][0]["ethpmPhysIf"]["children"][0][
+                        "ethpmFcot"
+                    ]["attributes"]["typeName"]
                 else:
-                    intf_dict[switch_id][port_name]["gbic_model"] = intf["l1PhysIf"]["children"][0]["ethpmPhysIf"][
-                        "children"
-                    ][0]["ethpmFcot"]["attributes"]["guiCiscoPID"]
+                    intf_dict[intf_id]["gbic_model"] = intf["l1PhysIf"]["children"][0]["ethpmPhysIf"]["children"][0][
+                        "ethpmFcot"
+                    ]["attributes"]["guiCiscoPID"]
 
+        return intf_dict
+
+    def get_interfaces_fex(self, pod_id, parent_id, fex_id, interface_sync):
+        """Get interfaces on a specified leaf with filtering by up/down state."""
+        if interface_sync == "all":
+            resp = self._get(
+                f'/api/node/class/topology/pod-{pod_id}/node-{parent_id}/l1PhysIf.json?rsp-subtree=full&rsp-subtree-class=ethpmPhysIf,ethpmFcot&query-target-filter=wcard(l1PhysIf.id, "{fex_id}")&order-by=l1PhysIf.id'
+            )
+        else:
+            resp = self._get(
+                f'/api/node/class/topology/pod-{pod_id}/node-{parent_id}/l1PhysIf.json?rsp-subtree=full&rsp-subtree-class=ethpmPhysIf,ethpmFcot&rsp-subtree-filter=eq(ethpmPhysIf.operSt,"{interface_sync}")&order-by=l1PhysIf.id'
+            )
+
+        intf_dict = {}
+        for intf in resp.json()["imdata"]:
+            if "children" in intf["l1PhysIf"]:
+                intf_id = intf["l1PhysIf"]["attributes"]["id"]
+                intf_dict[intf_id] = {}
+                intf_dict[intf_id]["descr"] = intf["l1PhysIf"]["attributes"]["descr"]
+                intf_dict[intf_id]["speed"] = intf["l1PhysIf"]["attributes"]["speed"]
+                intf_dict[intf_id]["bw"] = intf["l1PhysIf"]["attributes"]["bw"]
+                intf_dict[intf_id]["usage"] = intf["l1PhysIf"]["attributes"]["usage"]
+                intf_dict[intf_id]["layer"] = intf["l1PhysIf"]["attributes"]["layer"]
+                intf_dict[intf_id]["mode"] = intf["l1PhysIf"]["attributes"]["mode"]
+                intf_dict[intf_id]["switchingSt"] = intf["l1PhysIf"]["attributes"]["switchingSt"]
+                intf_dict[intf_id]["state"] = intf["l1PhysIf"]["children"][0]["ethpmPhysIf"]["attributes"]["operSt"]
+                intf_dict[intf_id]["state_reason"] = intf["l1PhysIf"]["children"][0]["ethpmPhysIf"]["attributes"][
+                    "operStQual"
+                ]
+                intf_dict[intf_id]["gbic_sn"] = intf["l1PhysIf"]["children"][0]["ethpmPhysIf"]["children"][0][
+                    "ethpmFcot"
+                ]["attributes"]["guiSN"]
+                intf_dict[intf_id]["gbic_vendor"] = intf["l1PhysIf"]["children"][0]["ethpmPhysIf"]["children"][0][
+                    "ethpmFcot"
+                ]["attributes"]["guiName"]
+                intf_dict[intf_id]["gbic_type"] = intf["l1PhysIf"]["children"][0]["ethpmPhysIf"]["children"][0][
+                    "ethpmFcot"
+                ]["attributes"]["guiPN"]
+                if (
+                    intf["l1PhysIf"]["children"][0]["ethpmPhysIf"]["children"][0]["ethpmFcot"]["attributes"][
+                        "guiCiscoPID"
+                    ]
+                    != ""
+                ):
+                    intf_dict[intf_id]["gbic_model"] = intf["l1PhysIf"]["children"][0]["ethpmPhysIf"]["children"][0][
+                        "ethpmFcot"
+                    ]["attributes"]["guiCiscoPID"]
+                else:
+                    intf_dict[intf_id]["gbic_model"] = intf["l1PhysIf"]["children"][0]["ethpmPhysIf"]["children"][0][
+                        "ethpmFcot"
+                    ]["attributes"]["typeName"]
         return intf_dict
 
     def register_node(self, serial_nbr, node_id, name) -> bool:

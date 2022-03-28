@@ -13,7 +13,7 @@ from .nautobot import (
 
 __all__ = [
     "NautobotTenant",
-    "NautbotVrf",
+    "NautobotVrf",
     "NautobotDevice",
     "NautobotDeviceRole",
     "NautobotDeviceType",

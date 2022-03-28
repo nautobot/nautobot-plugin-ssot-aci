@@ -1,6 +1,7 @@
 """Nautobot Models for Cisco ACI integration with SSoT plugin."""
 
 import logging
+from diffsync.exceptions import ObjectNotCreated
 from django.contrib.contenttypes.models import ContentType
 from nautobot.tenancy.models import Tenant as OrmTenant
 from nautobot.dcim.models import DeviceType as OrmDeviceType
@@ -66,7 +67,7 @@ class NautobotVrf(Vrf):
 
     @classmethod
     def create(cls, diffsync, ids, attrs):
-        """Create VRF object in Nautobot"""
+        """Create VRF object in Nautobot."""
         # TODO diffsync.job.log_warning(f"Tenant {self.name} will be deleted.")
         _tenant = OrmTenant.objects.get(name=ids["tenant"])
         _vrf = OrmVrf(name=ids["name"], tenant=_tenant)
@@ -75,7 +76,7 @@ class NautobotVrf(Vrf):
         return super().create(ids=ids, diffsync=diffsync, attrs=attrs)
 
     def update(self, attrs):
-        """Update VRF object in Nautobot"""
+        """Update VRF object in Nautobot."""
         _tenant = OrmTenant.objects.get(name=self.tenant)
         _vrf = OrmVrf.objects.get(name=self.name, tenant=_tenant)
         if attrs.get("description"):
@@ -90,7 +91,7 @@ class NautobotVrf(Vrf):
         return super().update(attrs)
 
     def delete(self):
-        """Delete VRF object in Nautobot"""
+        """Delete VRF object in Nautobot."""
         self.diffsync.job.log_warning(f"VRF {self.name} will be deleted.")
         _vrf = OrmVrf.objects.get(name=self.get_identifiers()["name"])
         _vrf.delete()
@@ -188,6 +189,8 @@ class NautobotDevice(Device):
             _device.comments = attrs["comments"]
         if attrs.get("node_id"):
             _device.custom_field_data["node_id"] = attrs["node_id"]
+        if attrs.get("pod_id"):
+            _device.custom_field_data["pod_id"] = attrs["pod_id"]
         _device.validated_save()
         return super().update(attrs)
 
@@ -256,8 +259,19 @@ class NautobotInterface(Interface):
             _interface = OrmInterface.objects.get(name=ids["name"], device=OrmDevice.objects.get(name=ids["device"]))
             if attrs.get("description"):
                 _interface.description = attrs["description"]
+            if attrs.get("gbic_vendor"):
+                _interface.custom_field_data["gbic_vendor"] = attrs["gbic_vendor"]
+            if attrs.get("gbic_type"):
+                _interface.custom_field_data["gbic_type"] = attrs["gbic_type"]
+            if attrs.get("gbic_sn"):
+                _interface.custom_field_data["gbic_sn"] = attrs["gbic_sn"]
+            if attrs.get("gbic_model"):
+                _interface.custom_field_data["gbic_model"] = attrs["gbic_model"]
+            if attrs.get("state") == "up":
+                _interface.tags.add(Tag.objects.get(slug=PLUGIN_CFG.get("tag_up").lower().replace(" ", "-")))
+            else:
+                _interface.tags.add(Tag.objects.get(slug=PLUGIN_CFG.get("tag_down").lower().replace(" ", "-")))
             _interface.validated_save()
-
         else:
             _interface = OrmInterface(
                 name=ids["name"],
@@ -265,6 +279,14 @@ class NautobotInterface(Interface):
                 description=attrs["description"],
                 type="other",
             )
+            _interface.custom_field_data["gbic_vendor"] = attrs["gbic_vendor"]
+            _interface.custom_field_data["gbic_sn"] = attrs["gbic_sn"]
+            _interface.custom_field_data["gbic_type"] = attrs["gbic_type"]
+            _interface.custom_field_data["gbic_model"] = attrs["gbic_model"]
+            if attrs.get("state") == "up":
+                _interface.tags.add(Tag.objects.get(slug=PLUGIN_CFG.get("tag_up").lower().replace(" ", "-")))
+            else:
+                _interface.tags.add(Tag.objects.get(slug=PLUGIN_CFG.get("tag_down").lower().replace(" ", "-")))
             _interface.validated_save()
 
         return super().create(ids=ids, diffsync=diffsync, attrs=attrs)
@@ -276,6 +298,20 @@ class NautobotInterface(Interface):
         )
         if attrs.get("description"):
             _interface.description = attrs["description"]
+        if attrs.get("gbic_vendor"):
+            _interface.custom_field_data["gbic_vendor"] = attrs["gbic_vendor"]
+        if attrs.get("gbic_type"):
+            _interface.custom_field_data["gbic_type"] = attrs["gbic_type"]
+        if attrs.get("gbic_sn"):
+            _interface.custom_field_data["gbic_sn"] = attrs["gbic_sn"]
+        if attrs.get("gbic_model"):
+            _interface.custom_field_data["gbic_model"] = attrs["gbic_model"]
+        if attrs.get("state") == "up":
+            _interface.tags.add(Tag.objects.get(slug=PLUGIN_CFG.get("tag_up").lower().replace(" ", "-")))
+            _interface.tags.remove(Tag.objects.get(slug=PLUGIN_CFG.get("tag_down").lower().replace(" ", "-")))
+        else:
+            _interface.tags.add(Tag.objects.get(slug=PLUGIN_CFG.get("tag_down").lower().replace(" ", "-")))
+            _interface.tags.remove(Tag.objects.get(slug=PLUGIN_CFG.get("tag_up").lower().replace(" ", "-")))
         _interface.validated_save()
         return super().update(attrs)
 
@@ -302,7 +338,7 @@ class NautobotIPAddress(IPAddress):
             obj_type = ContentType.objects.get(model="interface")
             try:
                 obj_id = OrmDevice.objects.get(name=attrs["device"]).interfaces.get(name=attrs["interface"]).id
-            except:
+            except ObjectNotCreated:
                 diffsync.job.log_warning(message=f"{_device} creating interface {_interface}")
         else:
             obj_type = None
@@ -361,7 +397,7 @@ class NautobotPrefix(Prefix):
         _tenant_name = ids["tenant"]
         try:
             _tenant = OrmTenant.objects.get(name=ids["tenant"])
-        except:
+        except ObjectNotCreated:
             diffsync.job.log_warning(message=f"Tenant {_tenant_name} not found!")
         _prefix = OrmPrefix(
             prefix=ids["prefix"],

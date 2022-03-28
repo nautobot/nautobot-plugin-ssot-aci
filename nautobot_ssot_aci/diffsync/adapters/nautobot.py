@@ -1,10 +1,12 @@
 """Diffsync Adapter for Nautobot."""
 
 import logging
+from unicodedata import name
 from diffsync import DiffSync
 from nautobot.tenancy.models import Tenant
 from nautobot.dcim.models import DeviceType, DeviceRole, Device, InterfaceTemplate, Interface
 from nautobot.ipam.models import IPAddress, Prefix, VRF
+from nautobot.extras.models import Tag
 from nautobot_ssot_aci.diffsync.models import NautobotTenant
 from nautobot_ssot_aci.diffsync.models import NautobotVrf
 from nautobot_ssot_aci.diffsync.models import NautobotDeviceType
@@ -14,7 +16,7 @@ from nautobot_ssot_aci.diffsync.models import NautobotInterfaceTemplate
 from nautobot_ssot_aci.diffsync.models import NautobotInterface
 from nautobot_ssot_aci.diffsync.models import NautobotIPAddress
 from nautobot_ssot_aci.diffsync.models import NautobotPrefix
-
+from nautobot_ssot_aci.constant import PLUGIN_CFG
 
 logger = logging.getLogger("rq.worker")
 
@@ -66,7 +68,7 @@ class NautobotAdapter(DiffSync):
             self.add(_tenant)
 
     def load_vrfs(self):
-        """Method to load VRFs from Nautobot"""
+        """Method to load VRFs from Nautobot."""
         for nbvrf in VRF.objects.all():
             _vrf = self.vrf(
                 name=nbvrf.name,
@@ -104,9 +106,22 @@ class NautobotAdapter(DiffSync):
     def load_interfaces(self):
         """Method to load Interfaces from Nautobot."""
         for nbinterface in Interface.objects.all():
+
+            if nbinterface.tags.filter(name=PLUGIN_CFG.get("tag_up")).count() > 0:
+                state = PLUGIN_CFG.get("tag_up").lower().replace(" ", "-")
+            else:
+                state = PLUGIN_CFG.get("tag_down").lower().replace(" ", "-")
             _interface = self.interface(
-                name=nbinterface.name, device=nbinterface.device.name, description=nbinterface.description
+                name=nbinterface.name,
+                device=nbinterface.device.name,
+                description=nbinterface.description,
+                gbic_vendor=nbinterface.custom_field_data["gbic_vendor"],
+                gbic_type=nbinterface.custom_field_data["gbic_type"],
+                gbic_sn=nbinterface.custom_field_data["gbic_sn"],
+                gbic_model=nbinterface.custom_field_data["gbic_model"],
+                state=state,
             )
+
             self.add(_interface)
 
     def load_deviceroles(self):
@@ -125,6 +140,7 @@ class NautobotAdapter(DiffSync):
                 serial=nbdevice.serial,
                 comments=nbdevice.comments,
                 node_id=nbdevice.custom_field_data["node_id"],
+                pod_id=nbdevice.custom_field_data["pod_id"],
             )
             self.add(_device)
 
@@ -164,8 +180,8 @@ class NautobotAdapter(DiffSync):
 
     def load(self):
         """Method to load models with data from Nautbot."""
-        # self.load_tenants()
-        # self.load_vrfs()
+        self.load_tenants()
+        self.load_vrfs()
         # self.load_prefixes()
         # self.load_ipaddresses()
         # self.load_interfacetemplates()

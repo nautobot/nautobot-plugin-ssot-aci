@@ -39,7 +39,7 @@ namespace.configure(
     {
         "nautobot_ssot_aci": {
             "nautobot_ver": "1.1.4",
-            "project_name": "nautobot_ssot_aci",
+            "project_name": "nautobot-ssot-aci",
             "python_ver": "3.6",
             "local": False,
             "compose_dir": os.path.join(os.path.dirname(__file__), "development"),

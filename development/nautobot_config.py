@@ -279,8 +279,13 @@ PLUGINS_CONFIG = {
         "aci_password": os.getenv("NAUTOBOT_ACI_PASSWORD"),
         "aci_verify": os.getenv("NAUTOBOT_ACI_VERIFY_SSL"),
         # Tag which will be created and applied to all synchronized objects.
-        "tag": "NTC_ACI",
-        "tag_color": "FF3333",
+        "tag": "ACI",
+        "tag_color": "0047AB",
+        # Tags indicating state applied to synchronized interfaces.
+        "tag_up": "UP",
+        "tag_up_color": "008000",
+        "tag_down": "DOWN",
+        "tag_down_color": "FF3333",
         # Manufacturer name. Specify existing, or a new one with this name will be created.
         "manufacturer_name": "Cisco",
         # Exclude any tenants you would not like to bring over from ACI.

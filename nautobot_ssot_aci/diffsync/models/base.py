@@ -1,7 +1,6 @@
 """Base Shared Models for Cisco ACI integration with SSoT plugin."""
 from typing import List, Optional
 from diffsync import DiffSyncModel
-from django_prometheus.models import ExportModelOperationsMixin
 
 
 class Tenant(DiffSyncModel):
@@ -165,8 +164,13 @@ class Interface(DiffSyncModel):
         "name",
         "device",
     )
-    _attributes = ("description",)
+    _attributes = ("description", "gbic_sn", "gbic_vendor", "gbic_type", "gbic_model", "state")
 
     name: str
     device: str
     description: Optional[str]
+    gbic_sn: Optional[str]
+    gbic_vendor: Optional[str]
+    gbic_type: Optional[str]
+    gbic_model: Optional[str]
+    state: Optional[str]

@@ -9,11 +9,22 @@ logger = logging.getLogger("rq.worker")
 def aci_create_tag(apps, **kwargs):
     """Add a tag."""
     tag = apps.get_model("extras", "Tag")
-    logger.info(f"Creating tag: {PLUGIN_CFG.get('tag')}")
+    logger.info(f"Creating tag: {PLUGIN_CFG.get('tag_down')}")
+
     tag.objects.update_or_create(
         name=PLUGIN_CFG.get("tag"),
         slug=PLUGIN_CFG.get("tag").lower().replace(" ", "-"),
         color=PLUGIN_CFG.get("tag_color"),
+    )
+    tag.objects.update_or_create(
+        name=PLUGIN_CFG.get("tag_up"),
+        slug=PLUGIN_CFG.get("tag_up").lower().replace(" ", "-"),
+        color=PLUGIN_CFG.get("tag_up_color"),
+    )
+    tag.objects.update_or_create(
+        name=PLUGIN_CFG.get("tag_down"),
+        slug=PLUGIN_CFG.get("tag_down").lower().replace(" ", "-"),
+        color=PLUGIN_CFG.get("tag_down_color"),
     )
 
 
@@ -34,7 +45,7 @@ def aci_create_site(apps, **kwargs):
 
 
 def device_custom_fields(apps, **kwargs):
-    """Creating custom fields for interfaces"""
+    """Creating custom fields for interfaces."""
     ContentType = apps.get_model("contenttypes", "ContentType")
     Device = apps.get_model("dcim", "Device")
     CustomField = apps.get_model("extras", "CustomField")
@@ -61,33 +72,40 @@ def device_custom_fields(apps, **kwargs):
 
 
 def interface_custom_fields(apps, **kwargs):
-    """Creating custom fields for interfaces"""
+    """Creating custom fields for interfaces."""
     ContentType = apps.get_model("contenttypes", "ContentType")
     Interface = apps.get_model("dcim", "Interface")
     CustomField = apps.get_model("extras", "CustomField")
-    logger.info("Creating Interface extra fields for GBICs")
+    logger.info("Creating Interface extra fields for Optics")
 
     for interface_cf_dict in [
         {
-            "name": "gbic_type",
-            "type": CustomFieldTypeChoices.TYPE_TEXT,
-            "label": "GBIC Type",
-            "filter_logic": "loose",
-            "description": "GBIC type added by SSoT plugin",
-        },
-        {
             "name": "gbic_vendor",
             "type": CustomFieldTypeChoices.TYPE_TEXT,
-            "label": "GBIC Type",
+            "label": "Optic Vendor",
             "filter_logic": "loose",
-            "description": "GBIC vendor added by SSoT plugin",
+            "description": "Optic vendor added by SSoT plugin",
+        },
+        {
+            "name": "gbic_type",
+            "type": CustomFieldTypeChoices.TYPE_TEXT,
+            "label": "Optic Type",
+            "filter_logic": "loose",
+            "description": "Optic type added by SSoT plugin",
         },
         {
             "name": "gbic_sn",
             "type": CustomFieldTypeChoices.TYPE_TEXT,
-            "label": "GBIC Type",
+            "label": "Optic S/N",
             "filter_logic": "loose",
-            "description": "GBIC S/N added by SSoT plugin",
+            "description": "Optic S/N added by SSoT plugin",
+        },
+        {
+            "name": "gbic_model",
+            "type": CustomFieldTypeChoices.TYPE_TEXT,
+            "label": "Optic Model",
+            "filter_logic": "loose",
+            "description": "Optic Model added by SSoT plugin",
         },
     ]:
         field, _ = CustomField.objects.get_or_create(name=interface_cf_dict["name"], defaults=interface_cf_dict)
