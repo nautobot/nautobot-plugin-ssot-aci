@@ -1,5 +1,7 @@
 """Post Migrate Welcome Wizard Script."""
+from enum import unique
 import logging
+import random
 from nautobot.extras.choices import CustomFieldTypeChoices
 from nautobot_ssot_aci.constant import PLUGIN_CFG
 
@@ -9,7 +11,7 @@ logger = logging.getLogger("rq.worker")
 def aci_create_tag(apps, **kwargs):
     """Add a tag."""
     tag = apps.get_model("extras", "Tag")
-    logger.info(f"Creating tag: {PLUGIN_CFG.get('tag_down')}")
+    logger.info("Creating tags for ACI, interface status and Sites")
 
     tag.objects.update_or_create(
         name=PLUGIN_CFG.get("tag"),
@@ -26,6 +28,14 @@ def aci_create_tag(apps, **kwargs):
         slug=PLUGIN_CFG.get("tag_down").lower().replace(" ", "-"),
         color=PLUGIN_CFG.get("tag_down_color"),
     )
+    apics = PLUGIN_CFG.get("apics")
+    for key in apics:
+        if ("SITE" in key or "STAGE" in key) and not tag.objects.filter(name=apics[key]).exists():
+            tag.objects.update_or_create(
+                name=apics[key],
+                slug=apics[key].lower(),
+                color="".join([random.choice("ABCDEF0123456789") for i in range(6)]),
+            )
 
 
 def aci_create_manufacturer(apps, **kwargs):
@@ -40,8 +50,11 @@ def aci_create_manufacturer(apps, **kwargs):
 def aci_create_site(apps, **kwargs):
     """Add site."""
     site = apps.get_model("dcim", "Site")
-    logger.info(f"Creating Site: {PLUGIN_CFG.get('site')}")
-    site.objects.update_or_create(name=PLUGIN_CFG.get("site"))
+    apics = PLUGIN_CFG.get("apics")
+    for key in apics:
+        if "SITE" in key:
+            logger.info(f"Creating Site: {apics[key]}")
+            site.objects.update_or_create(name=apics[key])
 
 
 def device_custom_fields(apps, **kwargs):

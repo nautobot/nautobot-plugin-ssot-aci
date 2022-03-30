@@ -173,9 +173,10 @@ class NautobotDevice(Device):
             device_type=OrmDeviceType.objects.get(model=ids["device_type"]),
             serial=ids["serial"],
             comments=attrs["comments"],
-            site=Site.objects.get(name=PLUGIN_CFG.get("site")),
+            site=Site.objects.get(name=attrs["site"]),
             status=Status.objects.get(name="Active"),
         )
+
         _device.custom_field_data["node_id"] = attrs["node_id"]
         _device.custom_field_data["pod_id"] = attrs["pod_id"]
         _device.tags.add(Tag.objects.get(slug=PLUGIN_CFG.get("tag").lower().replace(" ", "-")))

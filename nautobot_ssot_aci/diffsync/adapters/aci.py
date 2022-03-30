@@ -47,7 +47,7 @@ class AciAdapter(DiffSync):
         "interface",
     ]
 
-    def __init__(self, *args, job=None, sync=None, **kwargs):
+    def __init__(self, *args, job=None, sync=None, client, **kwargs):
         """Initialize ACI.
 
         Args:
@@ -57,7 +57,15 @@ class AciAdapter(DiffSync):
         super().__init__(*args, **kwargs)
         self.job = job
         self.sync = sync
-        self.conn = AciApi()
+        self.conn = AciApi(
+            username=client["username"],
+            password=client["password"],
+            base_uri=client["base_uri"],
+            verify=client["verify"],
+            site=client["site"],
+            stage=client["stage"],
+        )
+        self.site = client.get("site")
         self.nodes = self.conn.get_nodes()
         logging.info(f"Nodes: {self.nodes}")
         self.controllers = self.conn.get_controllers()
@@ -291,13 +299,14 @@ class AciAdapter(DiffSync):
                 comments=PLUGIN_CFG.get("comments", ""),
                 node_id=int(key),
                 pod_id=self.devices[key]["pod_id"],
+                site=self.site,
             )
             self.add(new_device)
 
     def load(self):
         """Method for one stop shop loading of all models."""
         self.load_tenants()
-        self.load_vrfs()
+        # self.load_vrfs()
         # self.load_prefixes()
         # self.load_ipaddresses()
         # self.load_interfacetemplates()

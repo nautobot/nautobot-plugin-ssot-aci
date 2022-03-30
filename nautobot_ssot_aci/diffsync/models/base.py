@@ -75,7 +75,7 @@ class Device(DiffSyncModel):
         "device_role",
         "serial",
     )
-    _attributes = ("comments", "node_id", "pod_id")
+    _attributes = ("comments", "node_id", "pod_id", "site")
     _children = {
         "interface": "interfaces",
     }
@@ -84,6 +84,7 @@ class Device(DiffSyncModel):
     device_type: str
     device_role: str
     serial: str
+    site: str
     comments: Optional[str]
     interfaces: List["Interface"] = []
     node_id: Optional[int]

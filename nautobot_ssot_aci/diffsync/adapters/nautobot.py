@@ -1,12 +1,10 @@
 """Diffsync Adapter for Nautobot."""
 
 import logging
-from unicodedata import name
 from diffsync import DiffSync
 from nautobot.tenancy.models import Tenant
 from nautobot.dcim.models import DeviceType, DeviceRole, Device, InterfaceTemplate, Interface
 from nautobot.ipam.models import IPAddress, Prefix, VRF
-from nautobot.extras.models import Tag
 from nautobot_ssot_aci.diffsync.models import NautobotTenant
 from nautobot_ssot_aci.diffsync.models import NautobotVrf
 from nautobot_ssot_aci.diffsync.models import NautobotDeviceType
@@ -139,6 +137,7 @@ class NautobotAdapter(DiffSync):
                 device_role=nbdevice.device_role.name,
                 serial=nbdevice.serial,
                 comments=nbdevice.comments,
+                site=nbdevice.site.name,
                 node_id=nbdevice.custom_field_data["node_id"],
                 pod_id=nbdevice.custom_field_data["pod_id"],
             )
@@ -181,7 +180,7 @@ class NautobotAdapter(DiffSync):
     def load(self):
         """Method to load models with data from Nautbot."""
         self.load_tenants()
-        self.load_vrfs()
+        # self.load_vrfs()
         # self.load_prefixes()
         # self.load_ipaddresses()
         # self.load_interfacetemplates()

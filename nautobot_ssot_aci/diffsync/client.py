@@ -30,16 +30,19 @@ class AciApi:
 
     def __init__(
         self,
-        username=PLUGIN_CFG.get("aci_username"),
-        password=PLUGIN_CFG.get("aci_password"),
-        base_uri=PLUGIN_CFG.get("aci_url"),
-        verify=is_truthy(PLUGIN_CFG.get("aci_verify")),
+        username,
+        password,
+        base_uri,
+        verify,
+        site,
+        stage,
     ):
         """Initialization of aci class."""
         self.username = username
         self.password = password
         self.base_uri = base_uri
         self.verify = verify
+        self.site = site
         self.cookies = ""
         self.last_login = None
         self.refresh_timeout = None
@@ -391,6 +394,7 @@ class AciApi:
             node_dict[node_id]["parent_id"] = parent_node_id
             node_dict[node_id]["fex_id"] = fex["eqptExtCh"]["attributes"]["id"]
             node_dict[node_id]["pod_id"] = pod_from_dn(fex["eqptExtCh"]["attributes"]["dn"])
+            node_dict[node_id]["site"] = self.site
         return node_dict
 
     def get_controllers(self) -> dict:
@@ -405,6 +409,7 @@ class AciApi:
             node_dict[node_id]["role"] = node["fabricNode"]["attributes"]["role"]
             node_dict[node_id]["serial"] = node["fabricNode"]["attributes"]["serial"]
             node_dict[node_id]["fabric_ip"] = node["fabricNode"]["attributes"]["address"]
+            node_dict[node_id]["site"] = self.site
         resp = self._get('/api/class/topSystem.json?query-target-filter=eq(topSystem.role,"controller")')
         for node in resp.json()["imdata"]:
             node_id = node["topSystem"]["attributes"]["id"]
@@ -435,7 +440,7 @@ class AciApi:
     def get_interfaces(self, nodes):
         """Get interfaces on a specified leaf with filtering by up/down state."""
         resp = self._get(
-            f"/api/node/class/l1PhysIf.json?rsp-subtree=full&rsp-subtree-class=ethpmPhysIf,ethpmFcot&order-by=l1PhysIf.id"
+            "/api/node/class/l1PhysIf.json?rsp-subtree=full&rsp-subtree-class=ethpmPhysIf,ethpmFcot&order-by=l1PhysIf.id"
         )
         intf_dict = {}
         for item in nodes:
