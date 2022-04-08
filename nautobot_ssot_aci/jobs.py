@@ -1,19 +1,42 @@
 """Jobs for ACI SSoT plugin."""
-
+from distutils import debug
+from distutils.util import strtobool
 from django.templatetags.static import static
 from django.urls import reverse
-from nautobot.extras.jobs import BooleanVar, Job
+from nautobot.extras.jobs import BooleanVar, ChoiceVar, Job
 from nautobot_ssot.jobs.base import DataMapping, DataSource
 from diffsync import DiffSyncFlags
 from diffsync.exceptions import ObjectNotCreated
 from nautobot_ssot_aci.diffsync.adapters.aci import AciAdapter
 from nautobot_ssot_aci.diffsync.adapters.nautobot import NautobotAdapter
+from nautobot_ssot_aci.constant import PLUGIN_CFG
 
 name = "Cisco ACI SSoT"  # pylint: disable=invalid-name
+
+aci_creds = {}
+for key in PLUGIN_CFG["apics"]:
+    subkey = key[key.rfind("_") + 1 :].lower()  # noqa: E203
+    aci_creds.setdefault(subkey, {})
+    if "USERNAME" in key:
+        aci_creds[subkey]["username"] = PLUGIN_CFG["apics"][key]
+    if "PASSWORD" in key:
+        aci_creds[subkey]["password"] = PLUGIN_CFG["apics"][key]
+    if "URI" in key:
+        aci_creds[subkey]["base_uri"] = PLUGIN_CFG["apics"][key]
+    if "VERIFY" in key:
+        aci_creds[subkey]["verify"] = bool(strtobool(PLUGIN_CFG["apics"][key]))
+    if "SITE" in key:
+        aci_creds[subkey]["site"] = PLUGIN_CFG["apics"][key]
+    if "STAGE" in key:
+        aci_creds[subkey]["stage"] = PLUGIN_CFG["apics"][key]
 
 
 class AciDataSource(DataSource, Job):
     """ACI SSoT Data Source."""
+
+    apic_choices = [(key, key) for key in aci_creds]
+
+    apic = ChoiceVar(choices=apic_choices, label="Select APIC")
 
     debug = BooleanVar(description="Enable for verbose debug logging.")
 
@@ -40,9 +63,10 @@ class AciDataSource(DataSource, Job):
 
     def sync_data(self):
         """Method to handle synchronization of data to Nautobot."""
-        self.log_info(message="Connecting to ACI")
-        aci_adapter = AciAdapter(job=self, sync=self.sync)
-        self.log_info(message="Loading data from ACI...")
+        apic = self.kwargs["apic"]
+        self.log_info(message=f"Connecting to APIC {apic} ")
+        aci_adapter = AciAdapter(job=self, sync=self.sync, client=aci_creds[apic])
+        self.log_info(message=f"Loading data from APIC {apic} ")
         aci_adapter.load()
         self.log_info(message="Connecting to Nautobot...")
         nb_adapter = NautobotAdapter(job=self, sync=self.sync)

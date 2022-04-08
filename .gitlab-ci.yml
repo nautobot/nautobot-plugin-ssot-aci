@@ -1,0 +1,39 @@
+---
+image: docker
+
+variables:
+  # Setup proxy for environment
+  HTTPS_PROXY: http://10.17.180.41:8080
+  HTTP_PROXY: http://sec000.zone2.proxy.allianz:8080
+  NO_PROXY: "gitlab.sdn.allianz, localhost, docker"
+
+services:
+  - docker:dind
+
+before_script:
+  # add required packages to the docker image
+  - apk add py3-pip python3 curl docker-compose bash
+  - alias python=python3
+  - pip install invoke
+  - curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py > /tmp/get-poetry.py
+  - python /tmp/get-poetry.py -y
+  - source $HOME/.poetry/env
+  - cp development/creds.example.env development/creds.env
+
+build:
+  stage: build
+  script:
+    # Deploy images and run tests
+    - invoke build --no-cache
+    - invoke tests --failfast
+
+deploy:
+  stage: deploy
+  script:
+    # publish plugin packages to the gitlab registry
+    - poetry config repositories.repo "$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/pypi"
+    - poetry config http-basic.repo "$CI_REGISTRY_USER" "$CI_JOB_TOKEN"
+    - poetry config certificates.repo.cert "development/gitlab.pem"
+    - poetry publish --repository repo --build
+  only:
+    - master

@@ -11,7 +11,13 @@ __version__ = metadata.version(__name__)
 from nautobot.core.signals import nautobot_database_ready
 from nautobot.extras.plugins import PluginConfig
 
-from nautobot_ssot_aci.signals import aci_create_manufacturer, aci_create_site, aci_create_tag, aci_create_custom_field
+from nautobot_ssot_aci.signals import (
+    aci_create_manufacturer,
+    aci_create_site,
+    aci_create_tag,
+    device_custom_fields,
+    interface_custom_fields,
+)
 
 
 class NautobotSsotAciConfig(PluginConfig):
@@ -30,12 +36,14 @@ class NautobotSsotAciConfig(PluginConfig):
     caching_config = {}
 
     def ready(self):
+        """Generate required custome fields"""
         super().ready()
 
         nautobot_database_ready.connect(aci_create_tag, sender=self)
         nautobot_database_ready.connect(aci_create_manufacturer, sender=self)
         nautobot_database_ready.connect(aci_create_site, sender=self)
-        nautobot_database_ready.connect(aci_create_custom_field, sender=self)
+        nautobot_database_ready.connect(device_custom_fields, sender=self)
+        nautobot_database_ready.connect(interface_custom_fields, sender=self)
 
 
 config = NautobotSsotAciConfig  # pylint:disable=invalid-name

@@ -844,7 +844,7 @@ class TestAciMethods(unittest.TestCase):  # pylint: disable=too-many-public-meth
             },
         }
 
-        assert self.aci_obj.get_interfaces(1, "101", "all") == expected_data  # nosec
+        assert self.aci_obj.get_interfaces(["201", "101"]) == expected_data  # nosec #E1121
 
     @patch.object(AciApi, "_handle_request")
     @patch.object(AciApi, "_login")
