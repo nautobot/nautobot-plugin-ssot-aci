@@ -1,5 +1,4 @@
 """Jobs for ACI SSoT plugin."""
-from distutils import debug
 from distutils.util import strtobool
 from django.templatetags.static import static
 from django.urls import reverse
@@ -11,7 +10,7 @@ from nautobot_ssot_aci.diffsync.adapters.aci import AciAdapter
 from nautobot_ssot_aci.diffsync.adapters.nautobot import NautobotAdapter
 from nautobot_ssot_aci.constant import PLUGIN_CFG
 
-name = "Cisco ACI SSoT"  # pylint: disable=invalid-name
+name = "Cisco ACI SSoT"  # pylint: disable=invalid-name, abstract-method
 
 aci_creds = {}
 for key in PLUGIN_CFG["apics"]:
@@ -29,9 +28,11 @@ for key in PLUGIN_CFG["apics"]:
         aci_creds[subkey]["site"] = PLUGIN_CFG["apics"][key]
     if "STAGE" in key:
         aci_creds[subkey]["stage"] = PLUGIN_CFG["apics"][key]
+    if "TENANT" in key:
+        aci_creds[subkey]["tenant_prefix"] = PLUGIN_CFG["apics"][key]
 
 
-class AciDataSource(DataSource, Job):
+class AciDataSource(DataSource, Job):  # pylint: disable=abstract-method
     """ACI SSoT Data Source."""
 
     apic_choices = [(key, key) for key in aci_creds]
@@ -59,6 +60,7 @@ class AciDataSource(DataSource, Job):
             DataMapping("Controller/Leaf/Spine OOB Mgmt IP", None, "IP Address", reverse("ipam:ipaddress_list")),
             DataMapping("Subnet", None, "Prefix", reverse("ipam:prefix_list")),
             DataMapping("Interface", None, "Interface", reverse("dcim:interface_list")),
+            DataMapping("VRF", None, "VRF", reverse("ipam:vrf_list")),
         )
 
     def sync_data(self):
@@ -69,7 +71,7 @@ class AciDataSource(DataSource, Job):
         self.log_info(message=f"Loading data from APIC {apic} ")
         aci_adapter.load()
         self.log_info(message="Connecting to Nautobot...")
-        nb_adapter = NautobotAdapter(job=self, sync=self.sync)
+        nb_adapter = NautobotAdapter(job=self, sync=self.sync, client=aci_creds[apic])
         self.log_info(message="Loading data from Nautobot...")
         nb_adapter.load()
         self.log_info(message="Performing diff of data between ACI and Nautobot.")

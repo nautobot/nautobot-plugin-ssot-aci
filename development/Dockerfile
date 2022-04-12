@@ -3,9 +3,6 @@ ARG PYTHON_VER
 FROM ghcr.io/nautobot/nautobot-dev:${NAUTOBOT_VER}-py${PYTHON_VER}
 
 ENV prometheus_multiproc_dir=/prom_cache
-ENV http_proxy http://10.17.180.41:8080
-ENV https_proxy http://10.17.180.41:8080
-ENV no_proxy "44.163.96.4,44.163.64.4,44.171.64.4,44.171.96.4,44.163.96.5"
 
 ARG NAUTOBOT_ROOT=/opt/nautobot
 

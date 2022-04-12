@@ -121,22 +121,24 @@ class IPAddress(DiffSyncModel):
     _identifiers = (
         "address",
         "status",
-        "vrf",
-        "tenant",
+        "site",
     )
     _attributes = (
         "description",
         "device",
         "interface",
+        "vrf",
+        "tenant",
     )
 
     address: str
     status: str
-    vrf: str
+    site: str
+    vrf: Optional[str]
     description: Optional[str]
     device: Optional[str]
     interface: Optional[str]
-    tenant: str
+    tenant: Optional[str]
 
 
 class Prefix(DiffSyncModel):
@@ -145,14 +147,15 @@ class Prefix(DiffSyncModel):
     _modelname = "prefix"
     _identifiers = (
         "prefix",
-        "tenant",
         "status",
+        "site",
     )
-    _attributes = ("description", "vrf")
+    _attributes = ("description", "vrf", "tenant")
 
     prefix: str
     status: str
-    tenant: str
+    site: str
+    tenant: Optional[str]
     description: Optional[str]
     vrf: Optional[str]
 
@@ -164,11 +167,13 @@ class Interface(DiffSyncModel):
     _identifiers = (
         "name",
         "device",
+        "site",
     )
     _attributes = ("description", "gbic_sn", "gbic_vendor", "gbic_type", "gbic_model", "state")
 
     name: str
     device: str
+    site: str
     description: Optional[str]
     gbic_sn: Optional[str]
     gbic_vendor: Optional[str]

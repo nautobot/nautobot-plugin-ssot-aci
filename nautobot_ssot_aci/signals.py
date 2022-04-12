@@ -1,5 +1,4 @@
 """Post Migrate Welcome Wizard Script."""
-from enum import unique
 import logging
 import random
 from nautobot.extras.choices import CustomFieldTypeChoices
@@ -34,7 +33,7 @@ def aci_create_tag(apps, **kwargs):
             tag.objects.update_or_create(
                 name=apics[key],
                 slug=apics[key].lower(),
-                color="".join([random.choice("ABCDEF0123456789") for i in range(6)]),
+                color="".join([random.choice("ABCDEF0123456789") for i in range(6)]),  # nosec
             )
 
 

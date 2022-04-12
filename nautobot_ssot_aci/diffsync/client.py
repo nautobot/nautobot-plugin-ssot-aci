@@ -1,4 +1,4 @@
-"""All interactions with ACI."""  # pylint: disable=too-many-lines
+"""All interactions with ACI."""  # pylint: disable=too-many-lines, too-many-instance-attributes, too-many-arguments
 
 import sys
 import logging
@@ -7,8 +7,6 @@ from datetime import timedelta
 import re
 import requests
 import urllib3
-from nautobot.core.settings_funcs import is_truthy
-from nautobot_ssot_aci.constant import PLUGIN_CFG
 from .utils import tenant_from_dn, ap_from_dn, node_from_dn, pod_from_dn, fex_id_from_dn, interface_from_dn
 
 
@@ -35,7 +33,7 @@ class AciApi:
         base_uri,
         verify,
         site,
-        stage,
+        #        stage,
     ):
         """Initialization of aci class."""
         self.username = username

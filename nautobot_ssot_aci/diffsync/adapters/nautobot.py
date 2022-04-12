@@ -44,16 +44,18 @@ class NautobotAdapter(DiffSync):
         "interface",
     ]
 
-    def __init__(self, *args, job=None, sync=None, **kwargs):
+    def __init__(self, *args, job=None, sync=None, client, **kwargs):
         """Initialize Nautobot.
 
         Args:
             job (object, optional): Nautobot job. Defaults to None.
             sync (object, optional): Nautobot DiffSync. Defaults to None.
+            client (object): ACI credentials.
         """
         super().__init__(*args, **kwargs)
         self.job = job
         self.sync = sync
+        self.site = client.get("site")
 
     def load_tenants(self):
         """Method to load Tenants from Nautobot."""
@@ -112,14 +114,14 @@ class NautobotAdapter(DiffSync):
             _interface = self.interface(
                 name=nbinterface.name,
                 device=nbinterface.device.name,
+                site=nbinterface.device.site.name,
                 description=nbinterface.description,
-                gbic_vendor=nbinterface.custom_field_data["gbic_vendor"],
-                gbic_type=nbinterface.custom_field_data["gbic_type"],
-                gbic_sn=nbinterface.custom_field_data["gbic_sn"],
-                gbic_model=nbinterface.custom_field_data["gbic_model"],
+                gbic_vendor=nbinterface.custom_field_data.get("gbic_vendor", None),
+                gbic_type=nbinterface.custom_field_data.get("gbic_type", None),
+                gbic_sn=nbinterface.custom_field_data.get("gbic_sn", None),
+                gbic_model=nbinterface.custom_field_data.get("gbic_model", None),
                 state=state,
             )
-
             self.add(_interface)
 
     def load_deviceroles(self):
@@ -156,6 +158,10 @@ class NautobotAdapter(DiffSync):
                 tenant_name = nbipaddr.tenant.name
             else:
                 tenant_name = None
+            if nbipaddr.vrf:
+                vrf_name = nbipaddr.vrf.name
+            else:
+                vrf_name = None
             _ipaddress = self.ip_address(
                 address=str(nbipaddr.address),
                 status=nbipaddr.status.name,
@@ -163,6 +169,8 @@ class NautobotAdapter(DiffSync):
                 tenant=tenant_name,
                 device=device_name,
                 interface=interface_name,
+                vrf=vrf_name,
+                site=self.site,
             )
             self.add(_ipaddress)
 
@@ -172,6 +180,7 @@ class NautobotAdapter(DiffSync):
             _prefix = self.prefix(
                 prefix=str(nbprefix.prefix),
                 status=nbprefix.status.name,
+                site=self.site,
                 description=nbprefix.description,
                 tenant=nbprefix.tenant.name,
             )
@@ -180,10 +189,10 @@ class NautobotAdapter(DiffSync):
     def load(self):
         """Method to load models with data from Nautbot."""
         self.load_tenants()
-        # self.load_vrfs()
-        # self.load_prefixes()
-        # self.load_ipaddresses()
-        # self.load_interfacetemplates()
+        self.load_vrfs()
+        self.load_prefixes()
+        self.load_ipaddresses()
+        self.load_interfacetemplates()
         self.load_deviceroles()
         self.load_devicetypes()
         self.load_devices()

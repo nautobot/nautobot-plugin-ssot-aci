@@ -12,7 +12,9 @@ class TestAciMethods(unittest.TestCase):  # pylint: disable=too-many-public-meth
         """Test setup."""
         self.mock_login = Mock()
         self.mock_login.ok = True
-        self.aci_obj = AciApi(username="fakeuser", password="fakepwd", base_uri="fakeuri", verify=False)  # nosec
+        self.aci_obj = AciApi(
+            username="fakeuser", password="fakepwd", base_uri="fakeuri", verify=False, site="ACI"
+        )  # nosec
 
     @patch.object(AciApi, "_handle_request")
     @patch.object(AciApi, "_login")

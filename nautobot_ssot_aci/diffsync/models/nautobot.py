@@ -69,6 +69,7 @@ class NautobotVrf(Vrf):
     def create(cls, diffsync, ids, attrs):
         """Create VRF object in Nautobot."""
         # TODO diffsync.job.log_warning(f"Tenant {self.name} will be deleted.")
+        logging.debug(f"TENANT: {ids['tenant']}")
         _tenant = OrmTenant.objects.get(name=ids["tenant"])
         _vrf = OrmVrf(name=ids["name"], tenant=_tenant)
         _vrf.tags.add(Tag.objects.get(slug=PLUGIN_CFG.get("tag").lower().replace(" ", "-")))
@@ -185,7 +186,7 @@ class NautobotDevice(Device):
 
     def update(self, attrs):
         """Update Device object in Nautobot."""
-        _device = OrmDevice.objects.get(name=self.name)
+        _device = OrmDevice.objects.get(name=self.name, site=Site.objects.get(name=attrs["site"]))
         if attrs.get("comments"):
             _device.comments = attrs["comments"]
         if attrs.get("node_id"):
@@ -198,7 +199,9 @@ class NautobotDevice(Device):
     def delete(self):
         """Delete Device object in Nautobot."""
         self.diffsync.job.log_warning(f"Device {self.name} will be deleted.")
-        _device = OrmDevice.objects.get(name=self.get_identifiers()["name"])
+        _device = OrmDevice.objects.get(
+            name=self.get_identifiers()["name"], site=Site.objects.get(name=self.get_attributes()["site"])
+        )
         _device.delete()
         return super().delete()
 
@@ -251,13 +254,18 @@ class NautobotInterface(Interface):
     def create(cls, diffsync, ids, attrs):
         """Create Interface object in Nautobot."""
 
-        q = OrmInterface.objects.filter(name=ids["name"], device=OrmDevice.objects.get(name=ids["device"]))
+        q = OrmInterface.objects.filter(
+            name=ids["name"], device=OrmDevice.objects.get(name=ids["device"], site=Site.objects.get(name=ids["site"]))
+        )
         if q.exists():
             # If interface already exists, then update it instead.
             # This will be the case when first creating devices and the interface templates are created.
             # Without this check, the plugin will attempt to create interfaces that were already created as part of the interface template.
             # This results in a ValidationError: 'Interface with this Device and Name already exists.'
-            _interface = OrmInterface.objects.get(name=ids["name"], device=OrmDevice.objects.get(name=ids["device"]))
+            _interface = OrmInterface.objects.get(
+                name=ids["name"],
+                device=OrmDevice.objects.get(name=ids["device"], site=Site.objects.get(name=ids["site"])),
+            )
             if attrs.get("description"):
                 _interface.description = attrs["description"]
             if attrs.get("gbic_vendor"):
@@ -276,7 +284,7 @@ class NautobotInterface(Interface):
         else:
             _interface = OrmInterface(
                 name=ids["name"],
-                device=OrmDevice.objects.get(name=ids["device"]),
+                device=OrmDevice.objects.get(name=ids["device"], site=Site.objects.get(name=ids["site"])),
                 description=attrs["description"],
                 type="other",
             )
@@ -295,7 +303,10 @@ class NautobotInterface(Interface):
     def update(self, attrs):
         """Update Interface object in Nautobot."""
         _interface = OrmInterface.objects.get(
-            name=self.get_identifiers()["name"], device=OrmDevice.objects.get(name=self.get_identifiers()["device"])
+            name=self.get_identifiers()["name"],
+            device=OrmDevice.objects.get(
+                name=self.get_identifiers()["device"], site=Site.objects.get(name=self.get_identifiers()["site"])
+            ),
         )
         if attrs.get("description"):
             _interface.description = attrs["description"]
@@ -320,7 +331,10 @@ class NautobotInterface(Interface):
         """Delete DeviceType object in Nautobot."""
         self.diffsync.job.log_warning(f"Interface {self.name} will be deleted.")
         _interface = OrmInterface.objects.get(
-            name=self.get_identifiers()["name"], device=OrmDevice.objects.get(device=self.get_identifiers()["device"])
+            name=self.get_identifiers()["name"],
+            device=OrmDevice.objects.get(
+                device=self.get_identifiers()["device"], site=Site.objects.get(name=self.get_identifiers()["site"])
+            ),
         )
         _interface.delete()
         return super().delete()
@@ -338,30 +352,41 @@ class NautobotIPAddress(IPAddress):
         if attrs["device"] and attrs["interface"]:
             obj_type = ContentType.objects.get(model="interface")
             try:
-                obj_id = OrmDevice.objects.get(name=attrs["device"]).interfaces.get(name=attrs["interface"]).id
+                logging.debug(f"INTERFACE: {attrs['interface']}")
+                obj_id = (
+                    OrmDevice.objects.get(name=attrs["device"], site=Site.objects.get(name=ids["site"]))
+                    .interfaces.get(name=attrs["interface"])
+                    .id
+                )
             except ObjectNotCreated:
                 diffsync.job.log_warning(message=f"{_device} creating interface {_interface}")
         else:
             obj_type = None
             obj_id = None
-        # if attrs["tenant"]:
-        #     tenant_name = OrmTenant.objects.get(name=attrs["tenant"])
-        # else:
-        #     tenant_name = None
+        logging.debug(f"TENANT: {attrs['tenant']}")
+        logging.debug(f"VRF: {attrs['vrf']}")
+        if attrs["tenant"]:
+            tenant_name = OrmTenant.objects.get(name=attrs["tenant"])
+        else:
+            tenant_name = None
+        if attrs["vrf"]:
+            vrf_name = OrmVrf.objects.get(name=attrs["vrf"], tenant=OrmTenant.objects.get(name=attrs["tenant"]))
+        else:
+            vrf_name = None
         _ipaddress = OrmIPAddress(
             address=ids["address"],
             status=Status.objects.get(name=ids["status"]),
             description=attrs["description"],
-            tenant=ids["tenant"],
+            tenant=tenant_name,
             assigned_object_type=obj_type,
             assigned_object_id=obj_id,
-            vrf=ids["vrf"],
+            vrf=vrf_name,
         )
         _ipaddress.tags.add(Tag.objects.get(slug=PLUGIN_CFG.get("tag").lower().replace(" ", "-")))
         _ipaddress.validated_save()
         # Update device with newly created address in the "Primary IPv4 field"
         if attrs["device"]:
-            device = OrmDevice.objects.get(name=attrs["device"])
+            device = OrmDevice.objects.get(name=attrs["device"], site=Site.objects.get(name=ids["site"]))
             device.primary_ip4 = OrmIPAddress.objects.get(address=ids["address"])
             device.save()
         return super().create(ids=ids, diffsync=diffsync, attrs=attrs)
@@ -376,7 +401,9 @@ class NautobotIPAddress(IPAddress):
         if attrs.get("device") and attrs.get("interface"):
             _ipaddress.assigned_object_type = ContentType.objects.get(model="interface")
             _ipaddress.assigned_object_id = (
-                OrmDevice.objects.get(name=attrs["device"]).interfaces.get(name=attrs["interface"]).id
+                OrmDevice.objects.get(name=attrs["device"], site=self.get_identifiers()["site"])
+                .interfaces.get(name=attrs["interface"])
+                .id
             )
         _ipaddress.validated_save()
         return super().update(attrs)
@@ -395,17 +422,18 @@ class NautobotPrefix(Prefix):
     @classmethod
     def create(cls, diffsync, ids, attrs):
         """Create Prefix object in Nautobot."""
-        _tenant_name = ids["tenant"]
+        _tenant_name = attrs["tenant"]
+        logging.debug(f"TENANT: {attrs['tenant']}")
         try:
-            _tenant = OrmTenant.objects.get(name=ids["tenant"])
+            _tenant = OrmTenant.objects.get(name=attrs["tenant"])
         except ObjectNotCreated:
             diffsync.job.log_warning(message=f"Tenant {_tenant_name} not found!")
         _prefix = OrmPrefix(
             prefix=ids["prefix"],
             status=Status.objects.get(name=ids["status"]),
             description=attrs["description"],
-            tenant=OrmTenant.objects.get(name=ids["tenant"]),
-            site=Site.objects.get(name=PLUGIN_CFG.get("site")),
+            tenant=OrmTenant.objects.get(name=attrs["tenant"]),
+            site=Site.objects.get(name=ids["site"]),
             vrf=OrmVrf.objects.get(name=attrs["vrf"], tenant=_tenant),
         )
         _prefix.tags.add(Tag.objects.get(slug=PLUGIN_CFG.get("tag").lower().replace(" ", "-")))

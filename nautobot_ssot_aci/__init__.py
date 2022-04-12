@@ -32,7 +32,7 @@ class NautobotSsotAciConfig(PluginConfig):
     required_settings = []
     min_version = "1.1.0"
     max_version = "1.9999"
-    default_settings = {"tag": "ACI", "tag_color": "FF3333", "manufacturer_name": "Cisco", "site": "Data Center"}
+    default_settings = {"tag": "ACI", "tag_color": "FF3333", "manufacturer_name": "Cisco"}
     caching_config = {}
 
     def ready(self):
