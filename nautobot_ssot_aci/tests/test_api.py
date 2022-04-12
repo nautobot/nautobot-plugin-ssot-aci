@@ -541,6 +541,7 @@ class TestAciMethods(unittest.TestCase):  # pylint: disable=too-many-public-meth
                         "attributes": {
                             "fabricSt": "active",
                             "id": "101",
+                            "dn": "topology/pod-1/node-101",
                             "name": "Leaf101",
                             "model": "N9K-C9396PX",
                             "role": "leaf",
@@ -554,6 +555,7 @@ class TestAciMethods(unittest.TestCase):  # pylint: disable=too-many-public-meth
                         "attributes": {
                             "fabricSt": "active",
                             "id": "102",
+                            "dn": "topology/pod-1/node-102",
                             "name": "Leaf102",
                             "model": "N9K-C9396PX",
                             "role": "leaf",
@@ -591,9 +593,12 @@ class TestAciMethods(unittest.TestCase):  # pylint: disable=too-many-public-meth
                 },
             ]
         }
+        mock_eqptExtCh = Mock()
+        mock_eqptExtCh.status_code = 200
+        mock_eqptExtCh.json.return_value = {"imdata": []}
 
         mocked_login.return_value = self.mock_login
-        mocked_handle_request.side_effect = [mock_fabricNode, mock_topSystem]
+        mocked_handle_request.side_effect = [mock_fabricNode, mock_topSystem, mock_eqptExtCh]
 
         expected_data = {
             "101": {
@@ -602,7 +607,7 @@ class TestAciMethods(unittest.TestCase):  # pylint: disable=too-many-public-meth
                 "role": "leaf",
                 "serial": "TEP-1-101",
                 "fabric_ip": "10.0.160.66",
-                "pod": "1",
+                "pod_id": "1",
                 "oob_ip": "10.1.1.101",
                 "uptime": "05:22:43:18.000",
             },
@@ -612,7 +617,7 @@ class TestAciMethods(unittest.TestCase):  # pylint: disable=too-many-public-meth
                 "role": "leaf",
                 "serial": "TEP-1-102",
                 "fabric_ip": "10.0.160.67",
-                "pod": "1",
+                "pod_id": "1",
                 "oob_ip": "10.1.1.102",
                 "uptime": "05:25:45:54.000",
             },
@@ -686,7 +691,8 @@ class TestAciMethods(unittest.TestCase):  # pylint: disable=too-many-public-meth
                 "role": "controller",
                 "serial": "TEP-1-1",
                 "fabric_ip": "10.0.0.1",
-                "pod": "1",
+                "site": "ACI",
+                "pod_id": "1",
                 "oob_ip": "10.1.1.1",
                 "uptime": "05:22:43:18.000",
             },
@@ -790,6 +796,7 @@ class TestAciMethods(unittest.TestCase):  # pylint: disable=too-many-public-meth
                     "l1PhysIf": {
                         "attributes": {
                             "id": "eth1/1",
+                            "dn": "topology/pod-1/node-101/sys/phys-[eth1/1]",
                             "descr": "UCS-6348-1",
                             "speed": "10G",
                             "bw": "0",
@@ -798,13 +805,33 @@ class TestAciMethods(unittest.TestCase):  # pylint: disable=too-many-public-meth
                             "mode": "trunk",
                             "switchingSt": "disabled",
                         },
-                        "children": [{"ethpmPhysIf": {"attributes": {"operSt": "down", "operStQual": "admin-down"}}}],
+                        "children": [
+                            {
+                                "ethpmPhysIf": {
+                                    "attributes": {"operSt": "down", "operStQual": "admin-down"},
+                                    "children": [
+                                        {
+                                            "ethpmFcot": {
+                                                "attributes": {
+                                                    "guiSN": "",
+                                                    "guiName": "",
+                                                    "guiPN": "",
+                                                    "guiCiscoPID": "",
+                                                    "typeName": "",
+                                                }
+                                            }
+                                        }
+                                    ],
+                                }
+                            }
+                        ],
                     }
                 },
                 {
                     "l1PhysIf": {
                         "attributes": {
                             "id": "eth1/2",
+                            "dn": "topology/pod-1/node-101/sys/phys-[eth1/2]",
                             "descr": "UCS-6348-2",
                             "speed": "10G",
                             "bw": "0",
@@ -813,40 +840,70 @@ class TestAciMethods(unittest.TestCase):  # pylint: disable=too-many-public-meth
                             "mode": "trunk",
                             "switchingSt": "disabled",
                         },
-                        "children": [{"ethpmPhysIf": {"attributes": {"operSt": "down", "operStQual": "admin-down"}}}],
+                        "children": [
+                            {
+                                "ethpmPhysIf": {
+                                    "attributes": {"operSt": "down", "operStQual": "admin-down"},
+                                    "children": [
+                                        {
+                                            "ethpmFcot": {
+                                                "attributes": {
+                                                    "guiSN": "",
+                                                    "guiName": "",
+                                                    "guiPN": "",
+                                                    "guiCiscoPID": "",
+                                                    "typeName": "",
+                                                }
+                                            }
+                                        }
+                                    ],
+                                }
+                            }
+                        ],
                     }
                 },
             ]
         }
+
         mocked_login.return_value = self.mock_login
         mocked_handle_request.return_value = mocked_l1PhysIf
 
         expected_data = {
-            "eth1/1": {
-                "descr": "UCS-6348-1",
-                "speed": "10G",
-                "bw": "0",
-                "usage": "discovery",
-                "layer": "Layer2",
-                "mode": "trunk",
-                "switchingSt": "disabled",
-                "state": "down",
-                "state_reason": "admin-down",
-            },
-            "eth1/2": {
-                "descr": "UCS-6348-2",
-                "speed": "10G",
-                "bw": "0",
-                "usage": "discovery",
-                "layer": "Layer2",
-                "mode": "trunk",
-                "switchingSt": "disabled",
-                "state": "down",
-                "state_reason": "admin-down",
-            },
+            "101": {
+                "eth1/1": {
+                    "descr": "UCS-6348-1",
+                    "speed": "10G",
+                    "bw": "0",
+                    "usage": "discovery",
+                    "layer": "Layer2",
+                    "mode": "trunk",
+                    "switchingSt": "disabled",
+                    "state": "down",
+                    "state_reason": "admin-down",
+                    "gbic_sn": "",
+                    "gbic_vendor": "",
+                    "gbic_type": "",
+                    "gbic_model": "",
+                },
+                "eth1/2": {
+                    "descr": "UCS-6348-2",
+                    "speed": "10G",
+                    "bw": "0",
+                    "usage": "discovery",
+                    "layer": "Layer2",
+                    "mode": "trunk",
+                    "switchingSt": "disabled",
+                    "state": "down",
+                    "state_reason": "admin-down",
+                    "gbic_sn": "",
+                    "gbic_vendor": "",
+                    "gbic_type": "",
+                    "gbic_model": "",
+                },
+            }
         }
 
-        assert self.aci_obj.get_interfaces(["201", "101"]) == expected_data  # nosec #E1121
+        assert self.aci_obj.get_interfaces(["101"]) == expected_data  # nosec #E1121
 
     @patch.object(AciApi, "_handle_request")
     @patch.object(AciApi, "_login")
@@ -857,7 +914,7 @@ class TestAciMethods(unittest.TestCase):  # pylint: disable=too-many-public-meth
 
         mocked_login.return_value = self.mock_login
         mocked_handle_request.return_value = mocked_response
-        self.assertRaises(RequestHTTPError, self.aci_obj.get_interfaces, 1, "101", "all")  # nosec
+        self.assertRaises(RequestHTTPError, self.aci_obj.get_interfaces, ["101"])  # nosec
 
     @patch.object(AciApi, "_handle_request")
     @patch.object(AciApi, "_login")
