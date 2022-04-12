@@ -1,4 +1,4 @@
-"""All interactions with ACI."""  # pylint: disable=too-many-lines
+"""All interactions with ACI."""  # pylint: disable=too-many-lines, too-many-instance-attributes, too-many-arguments
 
 import sys
 import logging
@@ -7,9 +7,8 @@ from datetime import timedelta
 import re
 import requests
 import urllib3
-from nautobot.core.settings_funcs import is_truthy
-from nautobot_ssot_aci.constant import PLUGIN_CFG
-from .utils import tenant_from_dn, ap_from_dn
+from .utils import tenant_from_dn, ap_from_dn, node_from_dn, pod_from_dn, fex_id_from_dn, interface_from_dn
+
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -29,16 +28,19 @@ class AciApi:
 
     def __init__(
         self,
-        username=PLUGIN_CFG.get("aci_username"),
-        password=PLUGIN_CFG.get("aci_password"),
-        base_uri=PLUGIN_CFG.get("aci_url"),
-        verify=is_truthy(PLUGIN_CFG.get("aci_verify")),
+        username,
+        password,
+        base_uri,
+        verify,
+        site,
+        #        stage,
     ):
         """Initialization of aci class."""
         self.username = username
         self.password = password
         self.base_uri = base_uri
         self.verify = verify
+        self.site = site
         self.cookies = ""
         self.last_login = None
         self.refresh_timeout = None
@@ -336,7 +338,10 @@ class AciApi:
                 f"/api/node/mo/uni/tn-{bd_dict[bd]['tenant']}/BD-{bd}.json?query-target=children&target-subtree-class=fvRsCtx"
             )
 
-            bd_dict[bd]["vrf"] = [data["fvRsCtx"]["attributes"]["tnFvCtxName"] for data in resp.json()["imdata"]][0]
+            # bd_dict[bd]["vrf"] = [data["fvRsCtx"]["attributes"]["tnFvCtxName"] for data in resp.json()["imdata"]][0]
+            for data in resp.json()["imdata"]:
+                tnt_vrf = data["fvRsCtx"]["attributes"].get("tnFvCtxName", "default")
+                bd_dict[bd]["vrf"] = tnt_vrf
 
             # get subnets
             resp = self._get(
@@ -352,7 +357,7 @@ class AciApi:
         return bd_dict
 
     def get_nodes(self) -> dict:
-        """Return list of Leaf/Spine nodes in the ACI fabric."""
+        """Return list of Leaf/Spine/FEXes nodes in the ACI fabric."""
         resp = self._get('/api/class/fabricNode.json?query-target-filter=ne(fabricNode.role,"controller")')
         node_dict = {}
         for node in resp.json()["imdata"]:
@@ -364,13 +369,30 @@ class AciApi:
                 node_dict[node_id]["role"] = node["fabricNode"]["attributes"]["role"]
                 node_dict[node_id]["serial"] = node["fabricNode"]["attributes"]["serial"]
                 node_dict[node_id]["fabric_ip"] = node["fabricNode"]["attributes"]["address"]
+                node_dict[node_id]["pod_id"] = pod_from_dn(node["fabricNode"]["attributes"]["dn"])
         resp = self._get('/api/class/topSystem.json?query-target-filter=ne(topSystem.role,"controller")')
 
         for node in resp.json()["imdata"]:
             node_id = node["topSystem"]["attributes"]["id"]
-            node_dict[node_id]["pod"] = node["topSystem"]["attributes"]["podId"]
             node_dict[node_id]["oob_ip"] = node["topSystem"]["attributes"]["oobMgmtAddr"]
             node_dict[node_id]["uptime"] = node["topSystem"]["attributes"]["systemUpTime"]
+
+        resp = self._get("/api/node/class/eqptExtCh.json")
+
+        for fex in resp.json()["imdata"]:
+            parent_node_id = node_from_dn(fex["eqptExtCh"]["attributes"]["dn"])
+            fex_id = fex["eqptExtCh"]["attributes"]["id"]
+            node_id = f"{parent_node_id}{fex_id}"
+            node_dict[node_id] = {}
+            node_dict[node_id]["name"] = node_dict[parent_node_id]["name"] + "-" + fex["eqptExtCh"]["attributes"]["id"]
+            node_dict[node_id]["model"] = fex["eqptExtCh"]["attributes"]["model"]
+            node_dict[node_id]["role"] = "fex"
+            node_dict[node_id]["serial"] = fex["eqptExtCh"]["attributes"]["ser"]
+            node_dict[node_id]["descr"] = fex["eqptExtCh"]["attributes"]["descr"]
+            node_dict[node_id]["parent_id"] = parent_node_id
+            node_dict[node_id]["fex_id"] = fex["eqptExtCh"]["attributes"]["id"]
+            node_dict[node_id]["pod_id"] = pod_from_dn(fex["eqptExtCh"]["attributes"]["dn"])
+            node_dict[node_id]["site"] = self.site
         return node_dict
 
     def get_controllers(self) -> dict:
@@ -381,14 +403,15 @@ class AciApi:
             node_id = node["fabricNode"]["attributes"]["id"]
             node_dict[node_id] = {}
             node_dict[node_id]["name"] = node["fabricNode"]["attributes"]["name"]
-            node_dict[node_id]["model"] = node["fabricNode"]["attributes"]["model"]
+            node_dict[node_id]["model"] = node["fabricNode"]["attributes"]["model"] or "APIC-SIM"
             node_dict[node_id]["role"] = node["fabricNode"]["attributes"]["role"]
             node_dict[node_id]["serial"] = node["fabricNode"]["attributes"]["serial"]
             node_dict[node_id]["fabric_ip"] = node["fabricNode"]["attributes"]["address"]
+            node_dict[node_id]["site"] = self.site
         resp = self._get('/api/class/topSystem.json?query-target-filter=eq(topSystem.role,"controller")')
         for node in resp.json()["imdata"]:
             node_id = node["topSystem"]["attributes"]["id"]
-            node_dict[node_id]["pod"] = node["topSystem"]["attributes"]["podId"]
+            node_dict[node_id]["pod_id"] = node["topSystem"]["attributes"]["podId"]
             node_dict[node_id]["oob_ip"] = node["topSystem"]["attributes"]["oobMgmtAddr"]
             node_dict[node_id]["uptime"] = node["topSystem"]["attributes"]["systemUpTime"]
         return node_dict
@@ -412,33 +435,61 @@ class AciApi:
             node_dict[sn]["supported"] = node["dhcpClient"]["attributes"]["supported"]
         return node_dict
 
-    def get_interfaces(self, pod_id, node_id, state):
+    def get_interfaces(self, nodes):
         """Get interfaces on a specified leaf with filtering by up/down state."""
-        if state == "all":
-            resp = self._get(
-                f"/api/node/class/topology/pod-{pod_id}/node-{node_id}/l1PhysIf.json?rsp-subtree=children&rsp-subtree-class=ethpmPhysIf&order-by=l1PhysIf.id"
-            )
-        else:
-            resp = self._get(
-                f'/api/node/class/topology/pod-{pod_id}/node-{node_id}/l1PhysIf.json?rsp-subtree=children&rsp-subtree-class=ethpmPhysIf&rsp-subtree-filter=eq(ethpmPhysIf.operSt,"{state}")&order-by=l1PhysIf.id'
-            )
-
+        resp = self._get(
+            "/api/node/class/l1PhysIf.json?rsp-subtree=full&rsp-subtree-class=ethpmPhysIf,ethpmFcot&order-by=l1PhysIf.id"
+        )
         intf_dict = {}
+        for item in nodes:
+            intf_dict[item] = {}
+
         for intf in resp.json()["imdata"]:
+            if int(fex_id_from_dn(intf["l1PhysIf"]["attributes"]["dn"])) < 100:
+                switch_id = node_from_dn(intf["l1PhysIf"]["attributes"]["dn"])
+            else:
+                switch_id = node_from_dn(intf["l1PhysIf"]["attributes"]["dn"]) + fex_id_from_dn(
+                    intf["l1PhysIf"]["attributes"]["dn"]
+                )
+            port_name = interface_from_dn(intf["l1PhysIf"]["attributes"]["dn"])
             if "children" in intf["l1PhysIf"]:
-                intf_id = intf["l1PhysIf"]["attributes"]["id"]
-                intf_dict[intf_id] = {}
-                intf_dict[intf_id]["descr"] = intf["l1PhysIf"]["attributes"]["descr"]
-                intf_dict[intf_id]["speed"] = intf["l1PhysIf"]["attributes"]["speed"]
-                intf_dict[intf_id]["bw"] = intf["l1PhysIf"]["attributes"]["bw"]
-                intf_dict[intf_id]["usage"] = intf["l1PhysIf"]["attributes"]["usage"]
-                intf_dict[intf_id]["layer"] = intf["l1PhysIf"]["attributes"]["layer"]
-                intf_dict[intf_id]["mode"] = intf["l1PhysIf"]["attributes"]["mode"]
-                intf_dict[intf_id]["switchingSt"] = intf["l1PhysIf"]["attributes"]["switchingSt"]
-                intf_dict[intf_id]["state"] = intf["l1PhysIf"]["children"][0]["ethpmPhysIf"]["attributes"]["operSt"]
-                intf_dict[intf_id]["state_reason"] = intf["l1PhysIf"]["children"][0]["ethpmPhysIf"]["attributes"][
-                    "operStQual"
+                intf_dict[switch_id][port_name] = {}
+                intf_dict[switch_id][port_name]["descr"] = intf["l1PhysIf"]["attributes"]["descr"]
+                intf_dict[switch_id][port_name]["speed"] = intf["l1PhysIf"]["attributes"]["speed"]
+                intf_dict[switch_id][port_name]["bw"] = intf["l1PhysIf"]["attributes"]["bw"]
+                intf_dict[switch_id][port_name]["usage"] = intf["l1PhysIf"]["attributes"]["usage"]
+                intf_dict[switch_id][port_name]["layer"] = intf["l1PhysIf"]["attributes"]["layer"]
+                intf_dict[switch_id][port_name]["mode"] = intf["l1PhysIf"]["attributes"]["mode"]
+                intf_dict[switch_id][port_name]["switchingSt"] = intf["l1PhysIf"]["attributes"]["switchingSt"]
+                intf_dict[switch_id][port_name]["state"] = intf["l1PhysIf"]["children"][0]["ethpmPhysIf"]["attributes"][
+                    "operSt"
                 ]
+                intf_dict[switch_id][port_name]["state_reason"] = intf["l1PhysIf"]["children"][0]["ethpmPhysIf"][
+                    "attributes"
+                ]["operStQual"]
+                intf_dict[switch_id][port_name]["gbic_sn"] = intf["l1PhysIf"]["children"][0]["ethpmPhysIf"]["children"][
+                    0
+                ]["ethpmFcot"]["attributes"]["guiSN"]
+                intf_dict[switch_id][port_name]["gbic_vendor"] = intf["l1PhysIf"]["children"][0]["ethpmPhysIf"][
+                    "children"
+                ][0]["ethpmFcot"]["attributes"]["guiName"]
+                intf_dict[switch_id][port_name]["gbic_type"] = intf["l1PhysIf"]["children"][0]["ethpmPhysIf"][
+                    "children"
+                ][0]["ethpmFcot"]["attributes"]["guiPN"]
+                if (
+                    intf["l1PhysIf"]["children"][0]["ethpmPhysIf"]["children"][0]["ethpmFcot"]["attributes"][
+                        "guiCiscoPID"
+                    ]
+                    != ""
+                ):
+                    intf_dict[switch_id][port_name]["gbic_model"] = intf["l1PhysIf"]["children"][0]["ethpmPhysIf"][
+                        "children"
+                    ][0]["ethpmFcot"]["attributes"]["typeName"]
+                else:
+                    intf_dict[switch_id][port_name]["gbic_model"] = intf["l1PhysIf"]["children"][0]["ethpmPhysIf"][
+                        "children"
+                    ][0]["ethpmFcot"]["attributes"]["guiCiscoPID"]
+
         return intf_dict
 
     def register_node(self, serial_nbr, node_id, name) -> bool:

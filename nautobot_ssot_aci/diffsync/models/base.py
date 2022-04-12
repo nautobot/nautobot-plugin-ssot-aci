@@ -15,6 +15,19 @@ class Tenant(DiffSyncModel):
     comments: Optional[str]
 
 
+class Vrf(DiffSyncModel):
+    """VRF model for DiffSync."""
+
+    _modelname = "vrf"
+    _identifiers = ("name", "tenant")
+    _attributes = ("description", "rd")
+
+    name: str
+    tenant: str
+    description: Optional[str]
+    rd: Optional[str]
+
+
 class DeviceType(DiffSyncModel):
     """DeviceType model for DiffSync."""
 
@@ -62,7 +75,7 @@ class Device(DiffSyncModel):
         "device_role",
         "serial",
     )
-    _attributes = ("comments", "node_id")
+    _attributes = ("comments", "node_id", "pod_id", "site")
     _children = {
         "interface": "interfaces",
     }
@@ -71,9 +84,11 @@ class Device(DiffSyncModel):
     device_type: str
     device_role: str
     serial: str
+    site: str
     comments: Optional[str]
     interfaces: List["Interface"] = []
     node_id: Optional[int]
+    pod_id: Optional[int]
 
 
 class InterfaceTemplate(DiffSyncModel):
@@ -106,16 +121,20 @@ class IPAddress(DiffSyncModel):
     _identifiers = (
         "address",
         "status",
+        "site",
     )
     _attributes = (
         "description",
         "device",
         "interface",
+        "vrf",
         "tenant",
     )
 
     address: str
     status: str
+    site: str
+    vrf: Optional[str]
     description: Optional[str]
     device: Optional[str]
     interface: Optional[str]
@@ -129,16 +148,16 @@ class Prefix(DiffSyncModel):
     _identifiers = (
         "prefix",
         "status",
+        "site",
     )
-    _attributes = (
-        "description",
-        "tenant",
-    )
+    _attributes = ("description", "vrf", "tenant")
 
     prefix: str
     status: str
-    description: Optional[str]
+    site: str
     tenant: Optional[str]
+    description: Optional[str]
+    vrf: Optional[str]
 
 
 class Interface(DiffSyncModel):
@@ -148,9 +167,16 @@ class Interface(DiffSyncModel):
     _identifiers = (
         "name",
         "device",
+        "site",
     )
-    _attributes = ("description",)
+    _attributes = ("description", "gbic_sn", "gbic_vendor", "gbic_type", "gbic_model", "state")
 
     name: str
     device: str
+    site: str
     description: Optional[str]
+    gbic_sn: Optional[str]
+    gbic_vendor: Optional[str]
+    gbic_type: Optional[str]
+    gbic_model: Optional[str]
+    state: Optional[str]

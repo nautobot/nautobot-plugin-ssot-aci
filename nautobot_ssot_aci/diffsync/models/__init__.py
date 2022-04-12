@@ -1,6 +1,7 @@
 """Initialize models for Nautobot and ACI."""
 from .nautobot import (
     NautobotTenant,
+    NautobotVrf,
     NautobotDevice,
     NautobotDeviceRole,
     NautobotDeviceType,
@@ -12,6 +13,7 @@ from .nautobot import (
 
 __all__ = [
     "NautobotTenant",
+    "NautobotVrf",
     "NautobotDevice",
     "NautobotDeviceRole",
     "NautobotDeviceType",
