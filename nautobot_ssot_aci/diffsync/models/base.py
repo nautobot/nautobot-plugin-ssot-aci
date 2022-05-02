@@ -34,10 +34,10 @@ class DeviceType(DiffSyncModel):
     _modelname = "device_type"
     _identifiers = (
         "model",
-        "manufacturer",
         "part_nbr",
     )
     _attributes = (
+        "manufacturer",
         "comments",
         "u_height",
     )
@@ -71,11 +71,9 @@ class Device(DiffSyncModel):
     _modelname = "device"
     _identifiers = (
         "name",
-        "device_type",
-        "device_role",
-        "serial",
+        "site",
     )
-    _attributes = ("comments", "node_id", "pod_id", "site")
+    _attributes = ("device_role", "device_type", "serial", "comments", "node_id", "pod_id")
     _children = {
         "interface": "interfaces",
     }
@@ -102,7 +100,6 @@ class InterfaceTemplate(DiffSyncModel):
     )
     _attributes = (
         "u_height",
-#        "description",
         "mgmt_only",
     )
 
@@ -110,7 +107,6 @@ class InterfaceTemplate(DiffSyncModel):
     device_type: str
     type: str
     u_height: Optional[int]
-#    description: Optional[str]
     mgmt_only: Optional[bool]
 
 
@@ -120,10 +116,10 @@ class IPAddress(DiffSyncModel):
     _modelname = "ip_address"
     _identifiers = (
         "address",
-        "status",
         "site",
     )
     _attributes = (
+        "status",
         "description",
         "device",
         "interface",
@@ -147,10 +143,9 @@ class Prefix(DiffSyncModel):
     _modelname = "prefix"
     _identifiers = (
         "prefix",
-        "status",
         "site",
     )
-    _attributes = ("description", "vrf", "tenant")
+    _attributes = ("status", "description", "vrf", "tenant")
 
     prefix: str
     status: str

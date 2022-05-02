@@ -108,7 +108,7 @@ class NautobotDeviceType(DeviceType):
 
         _devicetype = OrmDeviceType(
             model=ids["model"],
-            manufacturer=Manufacturer.objects.get(name=ids["manufacturer"]),
+            manufacturer=Manufacturer.objects.get(name=attrs["manufacturer"]),
             part_number=ids["part_nbr"],
             u_height=attrs["u_height"],
             comments=attrs["comments"],
@@ -121,6 +121,8 @@ class NautobotDeviceType(DeviceType):
     def update(self, attrs):
         """Update DeviceType object in Nautobot."""
         _devicetype = OrmDeviceType.objects.get(model=self.model)
+        if attrs.get("manufacturer"):
+            _devicetype.manufacturer = Manufacturer.objects.get(name=attrs["manufacturer"])
         if attrs.get("comments"):
             _devicetype.comments = attrs["comments"]
         if attrs.get("u_height"):
@@ -170,11 +172,11 @@ class NautobotDevice(Device):
         """Create Device object in Nautobot."""
         _device = OrmDevice(
             name=ids["name"],
-            device_role=OrmDeviceRole.objects.get(name=ids["device_role"]),
-            device_type=OrmDeviceType.objects.get(model=ids["device_type"]),
-            serial=ids["serial"],
+            device_role=OrmDeviceRole.objects.get(name=attrs["device_role"]),
+            device_type=OrmDeviceType.objects.get(model=attrs["device_type"]),
+            serial=attrs["serial"],
             comments=attrs["comments"],
-            site=Site.objects.get(name=attrs["site"]),
+            site=Site.objects.get(name=ids["site"]),
             status=Status.objects.get(name="Active"),
         )
 
@@ -186,7 +188,13 @@ class NautobotDevice(Device):
 
     def update(self, attrs):
         """Update Device object in Nautobot."""
-        _device = OrmDevice.objects.get(name=self.name, site=Site.objects.get(name=attrs["site"]))
+        _device = OrmDevice.objects.get(name=self.name, site=Site.objects.get(name=self.get_identifiers()["site"]))
+        if attrs.get("serial"):
+            _device.serial = attrs["serial"]
+        if attrs.get("device_type"):
+            _device.device_type = OrmDeviceType.objects.get(model=attrs["device_type"])
+        if attrs.get("device_role"):
+            _device.device_role = OrmDeviceRole.objects.get(name=attrs["device_role"])
         if attrs.get("comments"):
             _device.comments = attrs["comments"]
         if attrs.get("node_id"):
@@ -216,7 +224,6 @@ class NautobotInterfaceTemplate(InterfaceTemplate):
             device_type=OrmDeviceType.objects.get(model=ids["device_type"]),
             name=ids["name"],
             type=ids["type"],
-#            description=attrs["description"],
             mgmt_only=attrs["mgmt_only"],
         )
         _interfacetemplate.validated_save()
@@ -229,8 +236,6 @@ class NautobotInterfaceTemplate(InterfaceTemplate):
             name=self.get_identifiers()["name"],
             device_type=OrmDeviceType.objects.get(model=self.get_identifiers()["device_type"]),
         )
- #       if attrs.get("description"):
-#            _interfacetemplate.description = attrs["description"]
         if attrs.get("mgmt_only"):
             _interfacetemplate.mgmt_only = attrs["mgmt_only"]
         _interfacetemplate.validated_save()
@@ -375,7 +380,7 @@ class NautobotIPAddress(IPAddress):
             vrf_name = None
         _ipaddress = OrmIPAddress(
             address=ids["address"],
-            status=Status.objects.get(name=ids["status"]),
+            status=Status.objects.get(name=attrs["status"]),
             description=attrs["description"],
             tenant=tenant_name,
             assigned_object_type=obj_type,
@@ -405,6 +410,8 @@ class NautobotIPAddress(IPAddress):
                 .interfaces.get(name=attrs["interface"])
                 .id
             )
+        if attrs.get("status"):
+            _ipaddress.status = Status.objects.get(name=attrs["status"])
         _ipaddress.validated_save()
         return super().update(attrs)
 
@@ -430,7 +437,7 @@ class NautobotPrefix(Prefix):
             diffsync.job.log_warning(message=f"Tenant {_tenant_name} not found!")
         _prefix = OrmPrefix(
             prefix=ids["prefix"],
-            status=Status.objects.get(name=ids["status"]),
+            status=Status.objects.get(name=attrs["status"]),
             description=attrs["description"],
             tenant=OrmTenant.objects.get(name=attrs["tenant"]),
             site=Site.objects.get(name=ids["site"]),
@@ -448,6 +455,8 @@ class NautobotPrefix(Prefix):
             _prefix.description = attrs["description"]
         if attrs.get("tenant"):
             _prefix.tenant = OrmTenant.objects.get(name=attrs["tenant"])
+        if attrs.get("status"):
+            _prefix.status = Status.objects.get(name=attrs["status"])
         _prefix.validated_save()
         return super().update(attrs)
 

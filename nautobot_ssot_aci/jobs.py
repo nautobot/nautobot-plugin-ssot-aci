@@ -78,6 +78,7 @@ class AciDataSource(DataSource, Job):  # pylint: disable=abstract-method
         flags = DiffSyncFlags.CONTINUE_ON_FAILURE
         # Below flag prevents deletion of objects that exist in Nautobot, but not ACI.
         flags |= DiffSyncFlags.SKIP_UNMATCHED_DST
+
         diff = nb_adapter.diff_from(aci_adapter, flags=flags)
         self.sync.diff = diff.dict()
         self.sync.save()
