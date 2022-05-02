@@ -1,6 +1,13 @@
 # Nautobot SSoT for Cisco ACI
 
-This Single Source of Truth (SSoT) Plugin for [Nautobot](https://github.com/nautobot/nautobot) provides the ability to synchronize objects between Cisco ACI and Nautobot. To accomplish this, Nautobot communicates with the Application Policy Infrastructure Controller (APIC), which is the controller for the ACI fabric. The SSoT plugin eliminates the need to manually enter information in Nautobot that is present in the Cisco APIC controller, such as device model/serial numbers, Leaf/Spine/Controller IP addressing, and more. Below is the list of items that are currently synchronized:
+This Single Source of Truth (SSoT) Plugin for [Nautobot](https://github.com/nautobot/nautobot) provides the ability to synchronize objects between Cisco ACI and Nautobot. To accomplish this, Nautobot communicates with the Cisco ACI controller, the Application Policy Infrastructure Controller (APIC). The APIC provides a central point of administration for the ACI fabric via a web dashboard or REST API.  The primary benefit of the SSoT plugin is that it eliminates duplication of work entering and maintaining information in Nautobot that is automatically discovered by the Cisco APIC controller.  This includes information such as device model/serial numbers, node management IP addressing, and more. In addition, as changes are made in the APIC, the changes can be automatically synchronized to Nautobot. Here are a few examples:
+
+- When leaf/spine switches are added to the fabric, Devices will be created in Nautobot
+- As devices are added to the ACI fabric, their management IP addresses are automatically created as IP Addresses in Nautobot
+- As bridge domains are added with subnets, the subnets are automatically created in Nautobot as Prefixes
+- Interface descriptions added or updated in ACI will be reflected on the interfaces in Nautobot
+
+Below is the list of items that are currently synchronized:
 
 | **ACI**                                       	| **Nautobot**                  	|
 |-----------------------------------------------	|-------------------------------	|
