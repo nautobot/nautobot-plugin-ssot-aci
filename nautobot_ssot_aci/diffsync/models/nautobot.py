@@ -216,7 +216,7 @@ class NautobotInterfaceTemplate(InterfaceTemplate):
             device_type=OrmDeviceType.objects.get(model=ids["device_type"]),
             name=ids["name"],
             type=ids["type"],
-            description=attrs["description"],
+#            description=attrs["description"],
             mgmt_only=attrs["mgmt_only"],
         )
         _interfacetemplate.validated_save()
@@ -229,8 +229,8 @@ class NautobotInterfaceTemplate(InterfaceTemplate):
             name=self.get_identifiers()["name"],
             device_type=OrmDeviceType.objects.get(model=self.get_identifiers()["device_type"]),
         )
-        if attrs.get("description"):
-            _interfacetemplate.description = attrs["description"]
+ #       if attrs.get("description"):
+#            _interfacetemplate.description = attrs["description"]
         if attrs.get("mgmt_only"):
             _interfacetemplate.mgmt_only = attrs["mgmt_only"]
         _interfacetemplate.validated_save()

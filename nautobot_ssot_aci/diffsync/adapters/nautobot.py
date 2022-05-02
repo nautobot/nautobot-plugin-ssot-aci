@@ -98,8 +98,7 @@ class NautobotAdapter(DiffSync):
                 name=nbinterfacetemplate.name,
                 device_type=nbinterfacetemplate.device_type.model,
                 type=nbinterfacetemplate.type,
-                mgmt_only=nbinterfacetemplate.mgmt_only,
-                description=nbinterfacetemplate.description,
+                mgmt_only=nbinterfacetemplate.mgmt_only
             )
             self.add(_interfacetemplate)
 
@@ -116,10 +115,10 @@ class NautobotAdapter(DiffSync):
                 device=nbinterface.device.name,
                 site=nbinterface.device.site.name,
                 description=nbinterface.description,
-                gbic_vendor=nbinterface.custom_field_data.get("gbic_vendor", None),
-                gbic_type=nbinterface.custom_field_data.get("gbic_type", None),
-                gbic_sn=nbinterface.custom_field_data.get("gbic_sn", None),
-                gbic_model=nbinterface.custom_field_data.get("gbic_model", None),
+                gbic_vendor=nbinterface.custom_field_data.get("gbic_vendor", ""),
+                gbic_type=nbinterface.custom_field_data.get("gbic_type", ""),
+                gbic_sn=nbinterface.custom_field_data.get("gbic_sn", ""),
+                gbic_model=nbinterface.custom_field_data.get("gbic_model", ""),
                 state=state,
             )
             self.add(_interface)
@@ -183,6 +182,7 @@ class NautobotAdapter(DiffSync):
                 site=self.site,
                 description=nbprefix.description,
                 tenant=nbprefix.tenant.name,
+                vrf=nbprefix.vrf.name
             )
             self.add(_prefix)
 

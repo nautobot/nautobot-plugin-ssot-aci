@@ -102,7 +102,7 @@ class InterfaceTemplate(DiffSyncModel):
     )
     _attributes = (
         "u_height",
-        "description",
+#        "description",
         "mgmt_only",
     )
 
@@ -110,7 +110,7 @@ class InterfaceTemplate(DiffSyncModel):
     device_type: str
     type: str
     u_height: Optional[int]
-    description: Optional[str]
+#    description: Optional[str]
     mgmt_only: Optional[bool]
 
 

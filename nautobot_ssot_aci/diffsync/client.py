@@ -66,7 +66,7 @@ class AciApi:
                 params=params,
                 verify=self.verify,
                 json=data,
-                timeout=10,
+                timeout=30,
             )
         except requests.exceptions.RequestException as error:
             raise RequestConnectError(f"Error occurred communicating with {self.base_uri}:\n{error}") from error

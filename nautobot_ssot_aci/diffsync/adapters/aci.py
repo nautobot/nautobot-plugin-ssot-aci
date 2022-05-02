@@ -238,8 +238,7 @@ class AciAdapter(DiffSync):
                         name=intf["name"],
                         device_type=device_specs["model"],
                         type=intf["type"],
-                        mgmt_only=intf.get("mgmt_only", False),
-                        description=PLUGIN_CFG.get("comments", ""),
+                        mgmt_only=intf.get("mgmt_only", False)
                     )
                     self.add(new_interfacetemplate)
             else:
