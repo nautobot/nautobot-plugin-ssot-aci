@@ -54,7 +54,6 @@ class AciDataSource(DataSource, Job):  # pylint: disable=abstract-method
         """Shows mapping of models between ACI and Nautobot."""
         return (
             DataMapping("Tenant", None, "Tenant", reverse("tenancy:tenant_list")),
-            DataMapping("Node Type", None, "Device Role", reverse("dcim:devicerole_list")),
             DataMapping("Node", None, "Device", reverse("dcim:device_list")),
             DataMapping("Model", None, "Device Type", reverse("dcim:devicetype_list")),
             DataMapping("Controller/Leaf/Spine OOB Mgmt IP", None, "IP Address", reverse("ipam:ipaddress_list")),
@@ -77,7 +76,7 @@ class AciDataSource(DataSource, Job):  # pylint: disable=abstract-method
         self.log_info(message="Performing diff of data between ACI and Nautobot.")
         flags = DiffSyncFlags.CONTINUE_ON_FAILURE
         # Below flag prevents deletion of objects that exist in Nautobot, but not ACI.
-        flags |= DiffSyncFlags.SKIP_UNMATCHED_DST
+        # flags |= DiffSyncFlags.SKIP_UNMATCHED_DST
 
         diff = nb_adapter.diff_from(aci_adapter, flags=flags)
         self.sync.diff = diff.dict()
