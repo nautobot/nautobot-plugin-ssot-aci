@@ -49,6 +49,12 @@ class AciDataSource(DataSource, Job):  # pylint: disable=abstract-method
         data_source_icon = static("nautobot_ssot_aci/aci.png")
         description = "Sync information from ACI to Nautobot"
 
+    def __init__(self):
+        """Initialize AciDataSource."""
+        super().__init__()
+        # Below flag prevents deletion of objects that exist in Nautobot, but not ACI.
+        self.diffsync_flags = self.diffsync_flags | DiffSyncFlags.SKIP_UNMATCHED_DST
+
     @classmethod
     def data_mappings(cls):
         """Shows mapping of models between ACI and Nautobot."""
@@ -63,33 +69,15 @@ class AciDataSource(DataSource, Job):  # pylint: disable=abstract-method
             DataMapping("VRF", None, "VRF", reverse("ipam:vrf_list")),
         )
 
-    def sync_data(self):
-        """Method to handle synchronization of data to Nautobot."""
-        apic = self.kwargs["apic"]
-        self.log_info(message=f"Connecting to APIC {apic} ")
-        aci_adapter = AciAdapter(job=self, sync=self.sync, client=aci_creds[apic])
-        self.log_info(message=f"Loading data from APIC {apic} ")
-        aci_adapter.load()
-        self.log_info(message="Connecting to Nautobot...")
-        nb_adapter = NautobotAdapter(job=self, sync=self.sync, client=aci_creds[apic])
-        self.log_info(message="Loading data from Nautobot...")
-        nb_adapter.load()
-        self.log_info(message="Performing diff of data between ACI and Nautobot.")
-        flags = DiffSyncFlags.CONTINUE_ON_FAILURE
-        # Below flag prevents deletion of objects that exist in Nautobot, but not ACI.
-        flags |= DiffSyncFlags.SKIP_UNMATCHED_DST
+    def load_source_adapter(self):
+        """Method to instantiate and load the ACI adapter into `self.source_adapter`."""
+        self.source_adapter = AciAdapter(job=self, sync=self.sync, client=aci_creds[self.kwargs["apic"]])
+        self.source_adapter.load()
 
-        diff = nb_adapter.diff_from(aci_adapter, flags=flags)
-        self.sync.diff = diff.dict()
-        self.sync.save()
-        self.log_info(message=diff.summary())
-        if not self.kwargs["dry_run"]:
-            self.log_info(message="Performing data synchronization from ACI to Nautobot.")
-            try:
-                nb_adapter.sync_from(aci_adapter, flags=flags)
-            except ObjectNotCreated as err:
-                self.log_debug(f"Unable to create object. {err}")
-            self.log_success(message="Sync complete.")
+    def load_target_adapter(self):
+        """Method to instantiate and load the Nautobot adapter into `self.target_adapter`."""
+        self.target_adapter = NautobotAdapter(job=self, sync=self.sync, client=aci_creds[self.kwargs["apic"]])
+        self.target_adapter.load()
 
 
 jobs = [AciDataSource]
