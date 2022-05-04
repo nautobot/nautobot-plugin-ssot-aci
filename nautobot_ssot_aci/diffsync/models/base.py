@@ -2,6 +2,7 @@
 from typing import List, Optional
 from diffsync import DiffSyncModel
 
+
 class Tenant(DiffSyncModel):
     """Tenant model for DiffSync."""
 
@@ -100,11 +101,7 @@ class InterfaceTemplate(DiffSyncModel):
         "name",
         "type",
     )
-    _attributes = (
-        "u_height",
-        "mgmt_only",
-        "site_tag"
-    )
+    _attributes = ("u_height", "mgmt_only", "site_tag")
 
     name: str
     device_type: str
@@ -122,15 +119,7 @@ class IPAddress(DiffSyncModel):
         "address",
         "site",
     )
-    _attributes = (
-        "status",
-        "description",
-        "device",
-        "interface",
-        "vrf",
-        "tenant",
-        "site_tag"
-    )
+    _attributes = ("status", "description", "device", "interface", "vrf", "tenant", "site_tag")
 
     address: str
     status: str

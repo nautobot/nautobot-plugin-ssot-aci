@@ -65,6 +65,7 @@ class NautobotTenant(Tenant):
 
 class NautobotVrf(Vrf):
     """Nautobot implementation of the VRF Model."""
+
     @classmethod
     def create(cls, diffsync, ids, attrs):
         """Create VRF object in Nautobot."""
@@ -227,7 +228,6 @@ class NautobotInterfaceTemplate(InterfaceTemplate):
             type=ids["type"],
             mgmt_only=attrs["mgmt_only"],
         )
-        _interfacetemplate.tags.add(Tag.objects.get(name=attrs["site_tag"]))
         _interfacetemplate.validated_save()
 
         return super().create(ids=ids, diffsync=diffsync, attrs=attrs)
@@ -397,9 +397,11 @@ class NautobotIPAddress(IPAddress):
             try:
                 vrf_name = OrmVrf.objects.get(name=attrs["vrf"], tenant=OrmTenant.objects.get(name=attrs["tenant"]))
             except OrmVrf.DoesNotExist:
-                diffsync.job.log_warning(message=f"VRF {attrs['vrf']} not found to associate IP Address {ids['address']}")
+                diffsync.job.log_warning(
+                    message=f"VRF {attrs['vrf']} not found to associate IP Address {ids['address']}"
+                )
                 vrf_name = None
-            
+
         else:
             vrf_name = None
         _ipaddress = OrmIPAddress(

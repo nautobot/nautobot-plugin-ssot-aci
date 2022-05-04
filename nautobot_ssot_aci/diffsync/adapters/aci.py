@@ -68,7 +68,7 @@ class AciAdapter(DiffSync):
         )
         self.site = client.get("site")
         self.tenant_prefix = client.get("tenant_prefix")
-        self.nodes = self.conn.get_nodes() 
+        self.nodes = self.conn.get_nodes()
         self.controllers = self.conn.get_controllers()
         self.nodes.update(self.controllers)
         self.devices = self.nodes
@@ -80,10 +80,10 @@ class AciAdapter(DiffSync):
             if not _tenant["name"] in PLUGIN_CFG.get("ignore_tenants"):
                 tenant_name = f"{self.tenant_prefix}:{_tenant['name']}"
                 new_tenant = self.tenant(
-                    name=tenant_name, 
-                    description=_tenant["description"], 
+                    name=tenant_name,
+                    description=_tenant["description"],
                     comments=PLUGIN_CFG.get("comments", ""),
-                    site_tag=self.site
+                    site_tag=self.site,
                 )
                 self.add(new_tenant)
 
@@ -95,10 +95,7 @@ class AciAdapter(DiffSync):
             vrf_name = _vrf["name"]
             vrf_tenant = f"{self.tenant_prefix}:{_vrf['tenant']}"
             vrf_description = _vrf.get("description", "")
-            new_vrf = self.vrf(name=vrf_name, 
-                tenant=vrf_tenant,
-                description=vrf_description,
-                site_tag=self.site)
+            new_vrf = self.vrf(name=vrf_name, tenant=vrf_tenant, description=vrf_description, site_tag=self.site)
             if _vrf["tenant"] not in PLUGIN_CFG.get("ignore_tenants"):
                 self.add(new_vrf)
 
@@ -144,7 +141,7 @@ class AciAdapter(DiffSync):
                     tenant=None,
                     vrf=None,
                     site=self.site,
-                    site_tag=self.site
+                    site_tag=self.site,
                 )
                 self.add(new_ipaddress)
         # Bridge domain subnets
@@ -160,7 +157,7 @@ class AciAdapter(DiffSync):
                         tenant=tenant_name,
                         vrf=bd_dict[bd]["vrf"],
                         site=self.site,
-                        site_tag=self.site
+                        site_tag=self.site,
                     )
                     # Using Try/Except to check for an existing loaded object
                     # If the object doesn't exist we can create it
@@ -190,7 +187,7 @@ class AciAdapter(DiffSync):
                             description=f"ACI Bridge Domain: {bd}",
                             tenant=tenant_name,
                             vrf=bd_dict[bd]["vrf"],
-                            site_tag=self.site
+                            site_tag=self.site,
                         )
                         # Using Try/Except to check for an existing loaded object
                         # If the object doesn't exist we can create it
@@ -226,18 +223,17 @@ class AciAdapter(DiffSync):
         #         u_height=u_height,
         #     )
         #     self.add(new_devicetype)
-        
-        for dt in os.listdir('nautobot_ssot_aci/diffsync/device-types'):
+
+        for dt in os.listdir("nautobot_ssot_aci/diffsync/device-types"):
             device_specs = load_yamlfile(os.path.join("nautobot_ssot_aci", "diffsync", "device-types", dt))
             _devicetype = self.device_type(
                 model=device_specs["model"],
                 manufacturer=PLUGIN_CFG.get("manufacturer_name"),
                 part_nbr=device_specs["part_number"],
                 comments=PLUGIN_CFG.get("comments", ""),
-                u_height=device_specs["u_height"]
+                u_height=device_specs["u_height"],
             )
             self.add(_devicetype)
-
 
     def load_interfacetemplates(self):
         """Load interface templates from YAML files."""
@@ -253,7 +249,7 @@ class AciAdapter(DiffSync):
                         device_type=device_specs["model"],
                         type=intf["type"],
                         mgmt_only=intf.get("mgmt_only", False),
-                        site_tag=self.site
+                        site_tag=self.site,
                     )
                     self.add(new_interfacetemplate)
             else:
@@ -270,14 +266,18 @@ class AciAdapter(DiffSync):
         for node in self.devices:
             # Load management and controller interfaces from YAML files
             device_specs = load_yamlfile(
-                    os.path.join(os.getcwd(), "nautobot_ssot_aci", "diffsync", "device-types", f"{self.devices[node]['model']}.yaml")
+                os.path.join(
+                    os.getcwd(), "nautobot_ssot_aci", "diffsync", "device-types", f"{self.devices[node]['model']}.yaml"
                 )
+            )
             for _interface in interfaces[node]:
-                if_list = [intf for intf in device_specs['interfaces'] if intf['name'] == _interface.replace("eth", "Ethernet")]
+                if_list = [
+                    intf for intf in device_specs["interfaces"] if intf["name"] == _interface.replace("eth", "Ethernet")
+                ]
                 if if_list:
-                    intf_type = if_list[0]['type']
+                    intf_type = if_list[0]["type"]
                 else:
-                    intf_type = 'other'
+                    intf_type = "other"
                 new_interface = self.interface(
                     name=_interface.replace("eth", "Ethernet"),
                     device=self.devices[node]["name"],
@@ -289,20 +289,19 @@ class AciAdapter(DiffSync):
                     gbic_model=interfaces[node][_interface]["gbic_model"],
                     state=interfaces[node][_interface]["state"],
                     type=intf_type,
-                    site_tag=self.site
+                    site_tag=self.site,
                 )
                 self.add(new_interface)
 
-
-            for _interface in device_specs['interfaces']:
-                if_list = [intf for intf in device_specs['interfaces'] if intf['name'] == _interface]
+            for _interface in device_specs["interfaces"]:
+                if_list = [intf for intf in device_specs["interfaces"] if intf["name"] == _interface]
                 if if_list:
-                    intf_type = if_list[0]['type']
+                    intf_type = if_list[0]["type"]
                 else:
-                    intf_type = 'other'
-                if re.match('^Eth[0-9]|^mgmt[0-9]', _interface['name']):
+                    intf_type = "other"
+                if re.match("^Eth[0-9]|^mgmt[0-9]", _interface["name"]):
                     new_interface = self.interface(
-                        name=_interface['name'],
+                        name=_interface["name"],
                         device=self.devices[node]["name"],
                         site=self.site,
                         description="",
@@ -312,7 +311,7 @@ class AciAdapter(DiffSync):
                         gbic_model="",
                         state="up",
                         type=intf_type,
-                        site_tag=self.site
+                        site_tag=self.site,
                     )
                     self.add(new_interface)
 
@@ -348,7 +347,7 @@ class AciAdapter(DiffSync):
                 node_id=int(key),
                 pod_id=self.devices[key]["pod_id"],
                 site=self.site,
-                site_tag=self.site
+                site_tag=self.site,
             )
             self.add(new_device)
 
@@ -356,9 +355,9 @@ class AciAdapter(DiffSync):
         """Method for one stop shop loading of all models."""
         self.load_tenants()
         self.load_vrfs()
-#        self.load_interfacetemplates()
+        #        self.load_interfacetemplates()
         self.load_devicetypes()
-#        self.load_deviceroles()
+        #        self.load_deviceroles()
         self.load_devices()
         self.load_interfaces()
         self.load_prefixes()

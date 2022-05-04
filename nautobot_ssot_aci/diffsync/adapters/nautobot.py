@@ -58,16 +58,12 @@ class NautobotAdapter(DiffSync):
         self.sync = sync
         self.site = client.get("site")
         self.site_tag = Tag.objects.get_or_create(name=self.site)[0]
-        
 
     def load_tenants(self):
         """Method to load Tenants from Nautobot."""
         for nbtenant in Tenant.objects.filter(tags=self.site_tag):
             _tenant = self.tenant(
-                name=nbtenant.name,
-                description=nbtenant.description,
-                comments=nbtenant.comments,
-                site_tag = self.site
+                name=nbtenant.name, description=nbtenant.description, comments=nbtenant.comments, site_tag=self.site
             )
             self.add(_tenant)
 
@@ -79,7 +75,7 @@ class NautobotAdapter(DiffSync):
                 tenant=nbvrf.tenant.name,
                 description=nbvrf.description if not None else "",
                 rd=nbvrf.rd,
-                site_tag = self.site
+                site_tag=self.site,
             )
             self.add(_vrf)
 
@@ -103,7 +99,7 @@ class NautobotAdapter(DiffSync):
                 device_type=nbinterfacetemplate.device_type.model,
                 type=nbinterfacetemplate.type,
                 mgmt_only=nbinterfacetemplate.mgmt_only,
-                site_tag=self.site
+                site_tag=self.site,
             )
             self.add(_interfacetemplate)
 
@@ -148,7 +144,7 @@ class NautobotAdapter(DiffSync):
                 site=nbdevice.site.name,
                 node_id=nbdevice.custom_field_data["node_id"],
                 pod_id=nbdevice.custom_field_data["pod_id"],
-                site_tag=self.site
+                site_tag=self.site,
             )
             self.add(_device)
 
@@ -178,7 +174,7 @@ class NautobotAdapter(DiffSync):
                 interface=interface_name,
                 vrf=vrf_name,
                 site=self.site,
-                site_tag=self.site
+                site_tag=self.site,
             )
             self.add(_ipaddress)
 
@@ -196,7 +192,7 @@ class NautobotAdapter(DiffSync):
                 description=nbprefix.description,
                 tenant=nbprefix.tenant.name,
                 vrf=vrf,
-                site_tag=self.site
+                site_tag=self.site,
             )
             self.add(_prefix)
 
@@ -204,8 +200,8 @@ class NautobotAdapter(DiffSync):
         """Method to load models with data from Nautbot."""
         self.load_tenants()
         self.load_vrfs()
-#        self.load_interfacetemplates()
-#        self.load_deviceroles()
+        #        self.load_interfacetemplates()
+        #        self.load_deviceroles()
         self.load_devicetypes()
         self.load_devices()
         self.load_interfaces()
