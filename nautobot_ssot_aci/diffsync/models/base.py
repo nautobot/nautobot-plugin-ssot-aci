@@ -8,11 +8,12 @@ class Tenant(DiffSyncModel):
 
     _modelname = "tenant"
     _identifiers = ("name",)
-    _attributes = ("description", "comments")
+    _attributes = ("description", "comments", "site_tag")
 
     name: str
     description: Optional[str]
     comments: Optional[str]
+    site_tag: str
 
 
 class Vrf(DiffSyncModel):
@@ -20,12 +21,13 @@ class Vrf(DiffSyncModel):
 
     _modelname = "vrf"
     _identifiers = ("name", "tenant")
-    _attributes = ("description", "rd")
+    _attributes = ("description", "rd", "site_tag")
 
     name: str
     tenant: str
     description: Optional[str]
     rd: Optional[str]
+    site_tag: str
 
 
 class DeviceType(DiffSyncModel):
@@ -73,7 +75,7 @@ class Device(DiffSyncModel):
         "name",
         "site",
     )
-    _attributes = ("device_role", "device_type", "serial", "comments", "node_id", "pod_id")
+    _attributes = ("device_role", "device_type", "serial", "comments", "node_id", "pod_id", "site_tag")
     _children = {
         "interface": "interfaces",
     }
@@ -87,6 +89,7 @@ class Device(DiffSyncModel):
     interfaces: List["Interface"] = []
     node_id: Optional[int]
     pod_id: Optional[int]
+    site_tag: str
 
 
 class InterfaceTemplate(DiffSyncModel):
@@ -98,16 +101,14 @@ class InterfaceTemplate(DiffSyncModel):
         "name",
         "type",
     )
-    _attributes = (
-        "u_height",
-        "mgmt_only",
-    )
+    _attributes = ("u_height", "mgmt_only", "site_tag")
 
     name: str
     device_type: str
     type: str
     u_height: Optional[int]
     mgmt_only: Optional[bool]
+    site_tag: str
 
 
 class IPAddress(DiffSyncModel):
@@ -118,14 +119,7 @@ class IPAddress(DiffSyncModel):
         "address",
         "site",
     )
-    _attributes = (
-        "status",
-        "description",
-        "device",
-        "interface",
-        "vrf",
-        "tenant",
-    )
+    _attributes = ("status", "description", "device", "interface", "vrf", "tenant", "site_tag")
 
     address: str
     status: str
@@ -135,6 +129,7 @@ class IPAddress(DiffSyncModel):
     device: Optional[str]
     interface: Optional[str]
     tenant: Optional[str]
+    site_tag: str
 
 
 class Prefix(DiffSyncModel):
@@ -145,7 +140,7 @@ class Prefix(DiffSyncModel):
         "prefix",
         "site",
     )
-    _attributes = ("status", "description", "vrf", "tenant")
+    _attributes = ("status", "description", "vrf", "tenant", "site_tag")
 
     prefix: str
     status: str
@@ -153,6 +148,7 @@ class Prefix(DiffSyncModel):
     tenant: Optional[str]
     description: Optional[str]
     vrf: Optional[str]
+    site_tag: str
 
 
 class Interface(DiffSyncModel):
@@ -164,7 +160,7 @@ class Interface(DiffSyncModel):
         "device",
         "site",
     )
-    _attributes = ("description", "gbic_sn", "gbic_vendor", "gbic_type", "gbic_model", "state")
+    _attributes = ("description", "gbic_sn", "gbic_vendor", "gbic_type", "gbic_model", "state", "type", "site_tag")
 
     name: str
     device: str
@@ -175,3 +171,5 @@ class Interface(DiffSyncModel):
     gbic_type: Optional[str]
     gbic_model: Optional[str]
     state: Optional[str]
+    type: str
+    site_tag: str

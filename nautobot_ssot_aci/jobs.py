@@ -52,15 +52,12 @@ class AciDataSource(DataSource, Job):  # pylint: disable=abstract-method
     def __init__(self):
         """Initialize AciDataSource."""
         super().__init__()
-        # Below flag prevents deletion of objects that exist in Nautobot, but not ACI.
-        self.diffsync_flags = self.diffsync_flags | DiffSyncFlags.SKIP_UNMATCHED_DST
 
     @classmethod
     def data_mappings(cls):
         """Shows mapping of models between ACI and Nautobot."""
         return (
             DataMapping("Tenant", None, "Tenant", reverse("tenancy:tenant_list")),
-            DataMapping("Node Type", None, "Device Role", reverse("dcim:devicerole_list")),
             DataMapping("Node", None, "Device", reverse("dcim:device_list")),
             DataMapping("Model", None, "Device Type", reverse("dcim:devicetype_list")),
             DataMapping("Controller/Leaf/Spine OOB Mgmt IP", None, "IP Address", reverse("ipam:ipaddress_list")),

@@ -56,6 +56,14 @@ def aci_create_site(apps, **kwargs):
             site.objects.update_or_create(name=apics[key])
 
 
+def aci_create_device_roles(apps, **kwargs):
+    """Add device roles."""
+    device_role = apps.get_model("dcim", "DeviceRole")
+    for role in ["leaf", "spine", "controller"]:
+        logger.info(f"Creating Role: {role}")
+        device_role.objects.update_or_create(name=role, description="Created by ACI SSoT Plugin")
+
+
 def device_custom_fields(apps, **kwargs):
     """Creating custom fields for interfaces."""
     ContentType = apps.get_model("contenttypes", "ContentType")
