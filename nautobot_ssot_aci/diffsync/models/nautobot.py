@@ -455,8 +455,6 @@ class NautobotPrefix(Prefix):
     def create(cls, diffsync, ids, attrs):
         """Create Prefix object in Nautobot."""
         _tenant_name = attrs["tenant"]
-        logger.info(f"VRF: {attrs['vrf']}")
-        logger.info(f"TENANT: {attrs['tenant']}")
         try:
             _tenant = OrmTenant.objects.get(name=attrs["tenant"])
         except ObjectNotCreated:
