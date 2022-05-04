@@ -32,7 +32,7 @@ def fex_id_from_dn(dn):
 
 def tenant_from_dn(dn):
     """Match an ACI tenant in the Distiguished Name (DN)."""
-    pattern = "tn-.+\/"  # noqa: W605  # pylint: disable=anomalous-backslash-in-string
+    pattern = "tn-(.+?)\/"  # noqa: W605  # pylint: disable=anomalous-backslash-in-string
     return re.search(pattern, dn).group().replace("tn-", "", 1).rstrip("/")
 
 
