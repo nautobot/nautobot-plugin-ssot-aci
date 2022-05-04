@@ -394,7 +394,12 @@ class NautobotIPAddress(IPAddress):
         else:
             tenant_name = None
         if attrs["vrf"]:
-            vrf_name = OrmVrf.objects.get(name=attrs["vrf"], tenant=OrmTenant.objects.get(name=attrs["tenant"]))
+            try:
+                vrf_name = OrmVrf.objects.get(name=attrs["vrf"], tenant=OrmTenant.objects.get(name=attrs["tenant"]))
+            except OrmVrf.DoesNotExist:
+                diffsync.job.log_warning(message=f"VRF {attrs['vrf']} not found to associate IP Address {ids['address']}")
+                vrf_name = None
+            
         else:
             vrf_name = None
         _ipaddress = OrmIPAddress(
@@ -450,12 +455,18 @@ class NautobotPrefix(Prefix):
     def create(cls, diffsync, ids, attrs):
         """Create Prefix object in Nautobot."""
         _tenant_name = attrs["tenant"]
+        logger.info(f"VRF: {attrs['vrf']}")
+        logger.info(f"TENANT: {attrs['tenant']}")
         try:
             _tenant = OrmTenant.objects.get(name=attrs["tenant"])
         except ObjectNotCreated:
             diffsync.job.log_warning(message=f"Tenant {_tenant_name} not found!")
         if attrs["vrf"]:
-            vrf = OrmVrf.objects.get(name=attrs["vrf"], tenant=_tenant)
+            try:
+                vrf = OrmVrf.objects.get(name=attrs["vrf"], tenant=_tenant)
+            except OrmVrf.DoesNotExist:
+                diffsync.job.log_warning(message=f"VRF {attrs['vrf']} not found to associate prefix {ids['prefix']}")
+                vrf = None
         else:
             vrf = None
         _prefix = OrmPrefix(
