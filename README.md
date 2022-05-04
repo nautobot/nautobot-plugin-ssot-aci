@@ -1,10 +1,12 @@
 # Nautobot SSoT for Cisco ACI
 
-This Single Source of Truth (SSoT) Plugin for [Nautobot](https://github.com/nautobot/nautobot) provides the ability to synchronize objects between Cisco ACI and Nautobot. To accomplish this, Nautobot communicates with the Cisco ACI controller, the Application Policy Infrastructure Controller (APIC). The APIC provides a central point of administration for the ACI fabric via a web dashboard or REST API.  The primary benefit of the SSoT plugin is that it eliminates duplication of work entering and maintaining information in Nautobot that is automatically discovered by the Cisco APIC controller.  This includes information such as device model/serial numbers, node management IP addressing, and more. In addition, as changes are made in the APIC, the changes can be automatically synchronized to Nautobot. Here are a few examples:
+This Single Source of Truth (SSoT) Plugin for [Nautobot](https://github.com/nautobot/nautobot) provides the ability to synchronize objects between Cisco ACI and Nautobot. To accomplish this, Nautobot communicates with the Cisco ACI controller, the Application Policy Infrastructure Controller (APIC). The APIC provides a central point of administration for the ACI fabric via a web dashboard or REST API.  The primary benefit of the SSoT plugin is that it eliminates duplication of work entering and maintaining information in Nautobot that is automatically discovered by the Cisco APIC controller.  This includes information such as device model/serial numbers, node management IP addressing, and more. In addition, adds/updates/deletes in the ACI fabric for the synchronized objects are replicated in Nautobot. For example:
 
-- When leaf/spine switches are added to the fabric, Devices will be created in Nautobot
+- When new devices are registered to the fabric, they will be added to Nautobot 
+- When devices are decommissioned from the fabric, they will be removed from Nautobot 
 - As devices are added to the ACI fabric, their management IP addresses are automatically created as IP Addresses in Nautobot
-- As bridge domains are added with subnets, the subnets are automatically created in Nautobot as Prefixes
+- As bridge domains are added with subnets, the subnets are automatically created in Nautobot as Prefixes and the gateway address configured as an IP Address
+- When a bridge domain is removed from ACI, the associated Prefix and IP Address are deleted from Nautobot
 - Interface descriptions added or updated in ACI will be reflected on the interfaces in Nautobot
 
 Below is the list of items that are currently synchronized:
@@ -12,12 +14,11 @@ Below is the list of items that are currently synchronized:
 | **ACI**                                       	| **Nautobot**                  	|
 |-----------------------------------------------	|-------------------------------	|
 | Tenant                                        	| Tenant                        	|
-| Node Type (Leaf/Spine/Controller)             	| Device Role                   	|
 | Node (Leaf/Spine/Controller)                  	| Device                        	|
 | Model                                         	| Device Type                   	|
 | Management IP address (Leaf/Spine/Controller) 	| IP Address                    	|
 | Bridge Domain Subnet                          	| Prefix, IP Address              |
-| Interfaces                                    	| Interface Template, Interface 	|
+| Interfaces                                    	| Interface 	                    |
 | VRFs                                            | VRFs                            |
 |
 

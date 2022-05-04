@@ -41,6 +41,7 @@ class NautobotTenant(Tenant):
         """Create Tenant object in Nautobot."""
         _tenant = OrmTenant(name=ids["name"], description=attrs["description"], comments=attrs["comments"])
         _tenant.tags.add(Tag.objects.get(slug=PLUGIN_CFG.get("tag").lower().replace(" ", "-")))
+        _tenant.tags.add(Tag.objects.get(name=attrs["site_tag"]))
         _tenant.validated_save()
         return super().create(ids=ids, diffsync=diffsync, attrs=attrs)
 
@@ -69,10 +70,10 @@ class NautobotVrf(Vrf):
     def create(cls, diffsync, ids, attrs):
         """Create VRF object in Nautobot."""
         # TODO diffsync.job.log_warning(f"Tenant {self.name} will be deleted.")
-        logging.debug(f"TENANT: {ids['tenant']}")
         _tenant = OrmTenant.objects.get(name=ids["tenant"])
         _vrf = OrmVrf(name=ids["name"], tenant=_tenant)
         _vrf.tags.add(Tag.objects.get(slug=PLUGIN_CFG.get("tag").lower().replace(" ", "-")))
+        _vrf.tags.add(Tag.objects.get(name=attrs["site_tag"]))
         _vrf.validated_save()
         return super().create(ids=ids, diffsync=diffsync, attrs=attrs)
 
@@ -183,6 +184,7 @@ class NautobotDevice(Device):
         _device.custom_field_data["node_id"] = attrs["node_id"]
         _device.custom_field_data["pod_id"] = attrs["pod_id"]
         _device.tags.add(Tag.objects.get(slug=PLUGIN_CFG.get("tag").lower().replace(" ", "-")))
+        _device.tags.add(Tag.objects.get(name=attrs["site_tag"]))
         _device.validated_save()
         return super().create(ids=ids, diffsync=diffsync, attrs=attrs)
 
@@ -258,50 +260,69 @@ class NautobotInterface(Interface):
     @classmethod
     def create(cls, diffsync, ids, attrs):
         """Create Interface object in Nautobot."""
-
-        q = OrmInterface.objects.filter(
-            name=ids["name"], device=OrmDevice.objects.get(name=ids["device"], site=Site.objects.get(name=ids["site"]))
+        _interface = OrmInterface(
+            name=ids["name"],
+            device=OrmDevice.objects.get(name=ids["device"], site=Site.objects.get(name=ids["site"])),
+            description=attrs["description"],
+            type=attrs["type"],
         )
-        if q.exists():
-            # If interface already exists, then update it instead.
-            # This will be the case when first creating devices and the interface templates are created.
-            # Without this check, the plugin will attempt to create interfaces that were already created as part of the interface template.
-            # This results in a ValidationError: 'Interface with this Device and Name already exists.'
-            _interface = OrmInterface.objects.get(
-                name=ids["name"],
-                device=OrmDevice.objects.get(name=ids["device"], site=Site.objects.get(name=ids["site"])),
-            )
-            if attrs.get("description"):
-                _interface.description = attrs["description"]
-            if attrs.get("gbic_vendor"):
-                _interface.custom_field_data["gbic_vendor"] = attrs["gbic_vendor"]
-            if attrs.get("gbic_type"):
-                _interface.custom_field_data["gbic_type"] = attrs["gbic_type"]
-            if attrs.get("gbic_sn"):
-                _interface.custom_field_data["gbic_sn"] = attrs["gbic_sn"]
-            if attrs.get("gbic_model"):
-                _interface.custom_field_data["gbic_model"] = attrs["gbic_model"]
-            if attrs.get("state") == "up":
-                _interface.tags.add(Tag.objects.get(slug=PLUGIN_CFG.get("tag_up").lower().replace(" ", "-")))
-            else:
-                _interface.tags.add(Tag.objects.get(slug=PLUGIN_CFG.get("tag_down").lower().replace(" ", "-")))
-            _interface.validated_save()
+        _interface.custom_field_data["gbic_vendor"] = attrs["gbic_vendor"]
+        _interface.custom_field_data["gbic_sn"] = attrs["gbic_sn"]
+        _interface.custom_field_data["gbic_type"] = attrs["gbic_type"]
+        _interface.custom_field_data["gbic_model"] = attrs["gbic_model"]
+        if attrs.get("state") == "up":
+            _interface.tags.add(Tag.objects.get(slug=PLUGIN_CFG.get("tag_up").lower().replace(" ", "-")))
         else:
-            _interface = OrmInterface(
-                name=ids["name"],
-                device=OrmDevice.objects.get(name=ids["device"], site=Site.objects.get(name=ids["site"])),
-                description=attrs["description"],
-                type="other",
-            )
-            _interface.custom_field_data["gbic_vendor"] = attrs["gbic_vendor"]
-            _interface.custom_field_data["gbic_sn"] = attrs["gbic_sn"]
-            _interface.custom_field_data["gbic_type"] = attrs["gbic_type"]
-            _interface.custom_field_data["gbic_model"] = attrs["gbic_model"]
-            if attrs.get("state") == "up":
-                _interface.tags.add(Tag.objects.get(slug=PLUGIN_CFG.get("tag_up").lower().replace(" ", "-")))
-            else:
-                _interface.tags.add(Tag.objects.get(slug=PLUGIN_CFG.get("tag_down").lower().replace(" ", "-")))
-            _interface.validated_save()
+            _interface.tags.add(Tag.objects.get(slug=PLUGIN_CFG.get("tag_down").lower().replace(" ", "-")))
+        _interface.tags.add(Tag.objects.get(name=attrs["site_tag"]))
+        _interface.validated_save()
+
+        # Removed interface template sync, so this should no longer be needed
+        # q = OrmInterface.objects.filter(
+        #     name=ids["name"], device=OrmDevice.objects.get(name=ids["device"], site=Site.objects.get(name=ids["site"]))
+        # )
+        # if q.exists():
+        #     # If interface already exists, then update it instead.
+        #     # This will be the case when first creating devices and the interface templates are created.
+        #     # Without this check, the plugin will attempt to create interfaces that were already created as part of the interface template.
+        #     # This results in a ValidationError: 'Interface with this Device and Name already exists.'
+        #     _interface = OrmInterface.objects.get(
+        #         name=ids["name"],
+        #         device=OrmDevice.objects.get(name=ids["device"], site=Site.objects.get(name=ids["site"])),
+        #     )
+        #     if attrs.get("description"):
+        #         _interface.description = attrs["description"]
+        #     if attrs.get("gbic_vendor"):
+        #         _interface.custom_field_data["gbic_vendor"] = attrs["gbic_vendor"]
+        #     if attrs.get("gbic_type"):
+        #         _interface.custom_field_data["gbic_type"] = attrs["gbic_type"]
+        #     if attrs.get("gbic_sn"):
+        #         _interface.custom_field_data["gbic_sn"] = attrs["gbic_sn"]
+        #     if attrs.get("gbic_model"):
+        #         _interface.custom_field_data["gbic_model"] = attrs["gbic_model"]
+        #     if attrs.get("state") == "up":
+        #         _interface.tags.add(Tag.objects.get(slug=PLUGIN_CFG.get("tag_up").lower().replace(" ", "-")))
+        #     else:
+        #         _interface.tags.add(Tag.objects.get(slug=PLUGIN_CFG.get("tag_down").lower().replace(" ", "-")))
+        #     _interface.tags.add(Tag.objects.get(name=attrs["site_tag"]))
+        #     _interface.validated_save()
+        # else:
+        #     _interface = OrmInterface(
+        #         name=ids["name"],
+        #         device=OrmDevice.objects.get(name=ids["device"], site=Site.objects.get(name=ids["site"])),
+        #         description=attrs["description"],
+        #         type="other",
+        #     )
+        #     _interface.custom_field_data["gbic_vendor"] = attrs["gbic_vendor"]
+        #     _interface.custom_field_data["gbic_sn"] = attrs["gbic_sn"]
+        #     _interface.custom_field_data["gbic_type"] = attrs["gbic_type"]
+        #     _interface.custom_field_data["gbic_model"] = attrs["gbic_model"]
+        #     if attrs.get("state") == "up":
+        #         _interface.tags.add(Tag.objects.get(slug=PLUGIN_CFG.get("tag_up").lower().replace(" ", "-")))
+        #     else:
+        #         _interface.tags.add(Tag.objects.get(slug=PLUGIN_CFG.get("tag_down").lower().replace(" ", "-")))
+        #     _interface.tags.add(Tag.objects.get(name=attrs["site_tag"]))
+        #     _interface.validated_save()
 
         return super().create(ids=ids, diffsync=diffsync, attrs=attrs)
 
@@ -315,6 +336,8 @@ class NautobotInterface(Interface):
         )
         if attrs.get("description"):
             _interface.description = attrs["description"]
+        if attrs.get("type"):
+            _interface.type = attrs["type"]
         if attrs.get("gbic_vendor"):
             _interface.custom_field_data["gbic_vendor"] = attrs["gbic_vendor"]
         if attrs.get("gbic_type"):
@@ -333,12 +356,12 @@ class NautobotInterface(Interface):
         return super().update(attrs)
 
     def delete(self):
-        """Delete DeviceType object in Nautobot."""
+        """Delete Interface object in Nautobot."""
         self.diffsync.job.log_warning(f"Interface {self.name} will be deleted.")
         _interface = OrmInterface.objects.get(
             name=self.get_identifiers()["name"],
             device=OrmDevice.objects.get(
-                device=self.get_identifiers()["device"], site=Site.objects.get(name=self.get_identifiers()["site"])
+                name=self.get_identifiers()["device"], site=Site.objects.get(name=self.get_identifiers()["site"])
             ),
         )
         _interface.delete()
@@ -351,13 +374,11 @@ class NautobotIPAddress(IPAddress):
     @classmethod
     def create(cls, diffsync, ids, attrs):
         """Create IPAddress object in Nautobot."""
-        logging.debug(f"DEVICE: {attrs['device']}")
         _device = attrs["device"]
         _interface = attrs["interface"]
         if attrs["device"] and attrs["interface"]:
             obj_type = ContentType.objects.get(model="interface")
             try:
-                logging.debug(f"INTERFACE: {attrs['interface']}")
                 obj_id = (
                     OrmDevice.objects.get(name=attrs["device"], site=Site.objects.get(name=ids["site"]))
                     .interfaces.get(name=attrs["interface"])
@@ -368,14 +389,19 @@ class NautobotIPAddress(IPAddress):
         else:
             obj_type = None
             obj_id = None
-        logging.debug(f"TENANT: {attrs['tenant']}")
-        logging.debug(f"VRF: {attrs['vrf']}")
         if attrs["tenant"]:
             tenant_name = OrmTenant.objects.get(name=attrs["tenant"])
         else:
             tenant_name = None
         if attrs["vrf"]:
-            vrf_name = OrmVrf.objects.get(name=attrs["vrf"], tenant=OrmTenant.objects.get(name=attrs["tenant"]))
+            try:
+                vrf_name = OrmVrf.objects.get(name=attrs["vrf"], tenant=OrmTenant.objects.get(name=attrs["tenant"]))
+            except OrmVrf.DoesNotExist:
+                diffsync.job.log_warning(
+                    message=f"VRF {attrs['vrf']} not found to associate IP Address {ids['address']}"
+                )
+                vrf_name = None
+
         else:
             vrf_name = None
         _ipaddress = OrmIPAddress(
@@ -388,6 +414,7 @@ class NautobotIPAddress(IPAddress):
             vrf=vrf_name,
         )
         _ipaddress.tags.add(Tag.objects.get(slug=PLUGIN_CFG.get("tag").lower().replace(" ", "-")))
+        _ipaddress.tags.add(Tag.objects.get(name=attrs["site_tag"]))
         _ipaddress.validated_save()
         # Update device with newly created address in the "Primary IPv4 field"
         if attrs["device"]:
@@ -430,20 +457,28 @@ class NautobotPrefix(Prefix):
     def create(cls, diffsync, ids, attrs):
         """Create Prefix object in Nautobot."""
         _tenant_name = attrs["tenant"]
-        logging.debug(f"TENANT: {attrs['tenant']}")
         try:
             _tenant = OrmTenant.objects.get(name=attrs["tenant"])
         except ObjectNotCreated:
             diffsync.job.log_warning(message=f"Tenant {_tenant_name} not found!")
+        if attrs["vrf"]:
+            try:
+                vrf = OrmVrf.objects.get(name=attrs["vrf"], tenant=_tenant)
+            except OrmVrf.DoesNotExist:
+                diffsync.job.log_warning(message=f"VRF {attrs['vrf']} not found to associate prefix {ids['prefix']}")
+                vrf = None
+        else:
+            vrf = None
         _prefix = OrmPrefix(
             prefix=ids["prefix"],
             status=Status.objects.get(name=attrs["status"]),
             description=attrs["description"],
             tenant=OrmTenant.objects.get(name=attrs["tenant"]),
             site=Site.objects.get(name=ids["site"]),
-            vrf=OrmVrf.objects.get(name=attrs["vrf"], tenant=_tenant),
+            vrf=vrf,
         )
         _prefix.tags.add(Tag.objects.get(slug=PLUGIN_CFG.get("tag").lower().replace(" ", "-")))
+        _prefix.tags.add(Tag.objects.get(name=attrs["site_tag"]))
         _prefix.validated_save()
         return super().create(ids=ids, diffsync=diffsync, attrs=attrs)
 

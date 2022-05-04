@@ -5,6 +5,7 @@ from diffsync import DiffSync
 from nautobot.tenancy.models import Tenant
 from nautobot.dcim.models import DeviceType, DeviceRole, Device, InterfaceTemplate, Interface
 from nautobot.ipam.models import IPAddress, Prefix, VRF
+from nautobot.extras.models import Tag
 from nautobot_ssot_aci.diffsync.models import NautobotTenant
 from nautobot_ssot_aci.diffsync.models import NautobotVrf
 from nautobot_ssot_aci.diffsync.models import NautobotDeviceType
@@ -39,9 +40,9 @@ class NautobotAdapter(DiffSync):
         "device_role",
         "interface_template",
         "device",
+        "interface",
         "prefix",
         "ip_address",
-        "interface",
     ]
 
     def __init__(self, *args, job=None, sync=None, client, **kwargs):
@@ -56,25 +57,25 @@ class NautobotAdapter(DiffSync):
         self.job = job
         self.sync = sync
         self.site = client.get("site")
+        self.site_tag = Tag.objects.get_or_create(name=self.site)[0]
 
     def load_tenants(self):
         """Method to load Tenants from Nautobot."""
-        for nbtenant in Tenant.objects.all():
+        for nbtenant in Tenant.objects.filter(tags=self.site_tag):
             _tenant = self.tenant(
-                name=nbtenant.name,
-                description=nbtenant.description,
-                comments=nbtenant.comments,
+                name=nbtenant.name, description=nbtenant.description, comments=nbtenant.comments, site_tag=self.site
             )
             self.add(_tenant)
 
     def load_vrfs(self):
         """Method to load VRFs from Nautobot."""
-        for nbvrf in VRF.objects.all():
+        for nbvrf in VRF.objects.filter(tags=self.site_tag):
             _vrf = self.vrf(
                 name=nbvrf.name,
                 tenant=nbvrf.tenant.name,
                 description=nbvrf.description if not None else "",
                 rd=nbvrf.rd,
+                site_tag=self.site,
             )
             self.add(_vrf)
 
@@ -88,23 +89,23 @@ class NautobotAdapter(DiffSync):
                 comments=nbdevicetype.comments,
                 u_height=nbdevicetype.u_height,
             )
-
             self.add(_devicetype)
 
     def load_interfacetemplates(self):
         """Method to load Interface Templates from Nautobot."""
-        for nbinterfacetemplate in InterfaceTemplate.objects.all():
+        for nbinterfacetemplate in InterfaceTemplate.objects.filter(tags=self.site_tag):
             _interfacetemplate = self.interface_template(
                 name=nbinterfacetemplate.name,
                 device_type=nbinterfacetemplate.device_type.model,
                 type=nbinterfacetemplate.type,
-                mgmt_only=nbinterfacetemplate.mgmt_only
+                mgmt_only=nbinterfacetemplate.mgmt_only,
+                site_tag=self.site,
             )
             self.add(_interfacetemplate)
 
     def load_interfaces(self):
         """Method to load Interfaces from Nautobot."""
-        for nbinterface in Interface.objects.all():
+        for nbinterface in Interface.objects.filter(tags=self.site_tag):
 
             if nbinterface.tags.filter(name=PLUGIN_CFG.get("tag_up")).count() > 0:
                 state = PLUGIN_CFG.get("tag_up").lower().replace(" ", "-")
@@ -120,6 +121,8 @@ class NautobotAdapter(DiffSync):
                 gbic_sn=nbinterface.custom_field_data.get("gbic_sn", ""),
                 gbic_model=nbinterface.custom_field_data.get("gbic_model", ""),
                 state=state,
+                type=nbinterface.type,
+                site_tag=self.site,
             )
             self.add(_interface)
 
@@ -131,7 +134,7 @@ class NautobotAdapter(DiffSync):
 
     def load_devices(self):
         """Method to load Devices from Nautobot."""
-        for nbdevice in Device.objects.all():
+        for nbdevice in Device.objects.filter(tags=self.site_tag):
             _device = self.device(
                 name=nbdevice.name,
                 device_type=nbdevice.device_type.model,
@@ -141,12 +144,13 @@ class NautobotAdapter(DiffSync):
                 site=nbdevice.site.name,
                 node_id=nbdevice.custom_field_data["node_id"],
                 pod_id=nbdevice.custom_field_data["pod_id"],
+                site_tag=self.site,
             )
             self.add(_device)
 
     def load_ipaddresses(self):
         """Method to load IPAddress objects from Nautobot."""
-        for nbipaddr in IPAddress.objects.all():
+        for nbipaddr in IPAddress.objects.filter(tags=self.site_tag):
             if nbipaddr.assigned_object:
                 device_name = nbipaddr.assigned_object.parent.name
                 interface_name = nbipaddr.assigned_object.name
@@ -170,19 +174,25 @@ class NautobotAdapter(DiffSync):
                 interface=interface_name,
                 vrf=vrf_name,
                 site=self.site,
+                site_tag=self.site,
             )
             self.add(_ipaddress)
 
     def load_prefixes(self):
         """Method to load Prefix objects from Nautobot."""
-        for nbprefix in Prefix.objects.all():
+        for nbprefix in Prefix.objects.filter(tags=self.site_tag):
+            if nbprefix.vrf:
+                vrf = nbprefix.vrf.name
+            else:
+                vrf = None
             _prefix = self.prefix(
                 prefix=str(nbprefix.prefix),
                 status=nbprefix.status.name,
                 site=self.site,
                 description=nbprefix.description,
                 tenant=nbprefix.tenant.name,
-                vrf=nbprefix.vrf.name
+                vrf=vrf,
+                site_tag=self.site,
             )
             self.add(_prefix)
 
@@ -190,10 +200,10 @@ class NautobotAdapter(DiffSync):
         """Method to load models with data from Nautbot."""
         self.load_tenants()
         self.load_vrfs()
-        self.load_prefixes()
-        self.load_ipaddresses()
-        self.load_interfacetemplates()
-        self.load_deviceroles()
+        #        self.load_interfacetemplates()
+        #        self.load_deviceroles()
         self.load_devicetypes()
         self.load_devices()
         self.load_interfaces()
+        self.load_prefixes()
+        self.load_ipaddresses()
