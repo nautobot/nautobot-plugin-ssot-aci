@@ -58,6 +58,7 @@ class NautobotAdapter(DiffSync):
         self.sync = sync
         self.site = client.get("site")
         self.site_tag = Tag.objects.get_or_create(name=self.site)[0]
+        self.tenant_prefix = client.get("tenant_prefix")
 
     def load_tenants(self):
         """Method to load Tenants from Nautobot."""
@@ -183,8 +184,14 @@ class NautobotAdapter(DiffSync):
         for nbprefix in Prefix.objects.filter(tags=self.site_tag):
             if nbprefix.vrf:
                 vrf = nbprefix.vrf.name
+                if nbprefix.vrf.tenant.name:
+                    vrf_tenant = f"{self.tenant_prefix}:{nbprefix.vrf.tenant.name}"
+                else:
+                    vrf_tenant = None
             else:
                 vrf = None
+                vrf_tenant = None
+            
             _prefix = self.prefix(
                 prefix=str(nbprefix.prefix),
                 status=nbprefix.status.name,
@@ -192,6 +199,7 @@ class NautobotAdapter(DiffSync):
                 description=nbprefix.description,
                 tenant=nbprefix.tenant.name,
                 vrf=vrf,
+                vrf_tenant=vrf_tenant,
                 site_tag=self.site,
             )
             self.add(_prefix)

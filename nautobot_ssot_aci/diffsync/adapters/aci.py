@@ -113,6 +113,7 @@ class AciAdapter(DiffSync):
                     interface="mgmt0",
                     tenant=None,
                     vrf=None,
+                    vrf_tenant=None,
                     site=self.site,
                     site_tag=self.site,
                 )
@@ -140,6 +141,7 @@ class AciAdapter(DiffSync):
                     interface="mgmt0",
                     tenant=None,
                     vrf=None,
+                    vrf_tenant=None,
                     site=self.site,
                     site_tag=self.site,
                 )
@@ -149,6 +151,10 @@ class AciAdapter(DiffSync):
         for bd in bd_dict:
             if bd_dict[bd].get("subnets"):
                 tenant_name = f"{self.tenant_prefix}:{bd_dict[bd].get('tenant')}"
+                if bd_dict[bd]["vrf_tenant"]:
+                    vrf_tenant = f"{self.tenant_prefix}:{bd_dict[bd]['vrf_tenant']}"
+                else:
+                    vrf_tenant = None
                 for subnet in bd_dict[bd]["subnets"]:
                     new_ipaddress = self.ip_address(
                         address=subnet[0],
@@ -156,21 +162,28 @@ class AciAdapter(DiffSync):
                         description=f"ACI Bridge Domain: {bd}",
                         tenant=tenant_name,
                         vrf=bd_dict[bd]["vrf"],
+                        vrf_tenant=vrf_tenant,
                         site=self.site,
                         site_tag=self.site,
                     )
+                    if not bd_dict[bd]["vrf"] or (not bd_dict[bd]["vrf"] and not vrf_tenant):
+                            self.job.log_warning(
+                                obj=new_ipaddress,
+                                message=f"VRF configured on Bridge Domain {bd} in tenant {tenant_name} is invalid, skipping."
+                            )
+                    else:
                     # Using Try/Except to check for an existing loaded object
                     # If the object doesn't exist we can create it
                     # Otherwise we log a message warning the user of the duplicate.
-                    try:
-                        self.get(obj=new_ipaddress, identifier=new_ipaddress.get_unique_id())
-                    except ObjectNotFound:
-                        self.add(new_ipaddress)
-                    else:
-                        self.job.log_warning(
-                            obj=new_ipaddress,
-                            message="Duplicate DiffSync IPAddress Object found and has not been loaded.",
-                        )
+                        try:
+                            self.get(obj=new_ipaddress, identifier=new_ipaddress.get_unique_id())
+                        except ObjectNotFound:
+                            self.add(new_ipaddress)
+                        else:
+                            self.job.log_warning(
+                                obj=new_ipaddress,
+                                message="Duplicate DiffSync IPAddress Object found and has not been loaded.",
+                            )
 
     def load_prefixes(self):
         """Load Bridge domain subnets from ACI."""
@@ -178,6 +191,10 @@ class AciAdapter(DiffSync):
         for bd in bd_dict:
             if bd_dict[bd].get("subnets"):
                 tenant_name = f"{self.tenant_prefix}:{bd_dict[bd].get('tenant')}"
+                if bd_dict[bd]["vrf_tenant"]:
+                    vrf_tenant = f"{self.tenant_prefix}:{bd_dict[bd]['vrf_tenant']}"
+                else:
+                    vrf_tenant = None
                 if tenant_name not in PLUGIN_CFG.get("ignore_tenants"):
                     for subnet in bd_dict[bd]["subnets"]:
                         new_prefix = self.prefix(
@@ -187,20 +204,27 @@ class AciAdapter(DiffSync):
                             description=f"ACI Bridge Domain: {bd}",
                             tenant=tenant_name,
                             vrf=bd_dict[bd]["vrf"],
+                            vrf_tenant=vrf_tenant,
                             site_tag=self.site,
                         )
+                        if not bd_dict[bd]["vrf"] or (bd_dict[bd]["vrf"] and not vrf_tenant):
+                            self.job.log_warning(
+                                obj=new_prefix,
+                                message=f"VRF configured on Bridge Domain {bd} in tenant {tenant_name} is invalid, skipping."
+                            )
+                        else:
                         # Using Try/Except to check for an existing loaded object
                         # If the object doesn't exist we can create it
                         # Otherwise we log a message warning the user of the duplicate.
-                        try:
-                            self.get(obj=new_prefix, identifier=new_prefix.get_unique_id())
-                        except ObjectNotFound:
-                            self.add(new_prefix)
-                        else:
-                            self.job.log_warning(
-                                obj=new_prefix,
-                                message="Duplicate DiffSync Prefix Object found and has not been loaded.",
-                            )
+                            try:
+                                self.get(obj=new_prefix, identifier=new_prefix.get_unique_id())
+                            except ObjectNotFound:
+                                self.add(new_prefix)
+                            else:
+                                self.job.log_warning(
+                                    obj=new_prefix,
+                                    message="Duplicate DiffSync Prefix Object found and has not been loaded.",
+                                )
 
     def load_devicetypes(self):
         """Load device types from YAML files."""

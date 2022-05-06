@@ -337,12 +337,13 @@ class AciApi:
             resp = self._get(
                 f"/api/node/mo/uni/tn-{bd_dict[bd]['tenant']}/BD-{bd}.json?query-target=children&target-subtree-class=fvRsCtx"
             )
-
-            # bd_dict[bd]["vrf"] = [data["fvRsCtx"]["attributes"]["tnFvCtxName"] for data in resp.json()["imdata"]][0]
             for data in resp.json()["imdata"]:
-                tnt_vrf = data["fvRsCtx"]["attributes"].get("tnFvCtxName", "default")
-                bd_dict[bd]["vrf"] = tnt_vrf
-
+                bd_dict[bd]["vrf"] = data["fvRsCtx"]["attributes"].get("tnFvCtxName", "default")
+                vrf_tenant = data["fvRsCtx"]["attributes"].get("tDn", None)
+                if vrf_tenant:
+                    bd_dict[bd]["vrf_tenant"] = tenant_from_dn(vrf_tenant)
+                else:
+                    bd_dict[bd]["vrf_tenant"] = None
             # get subnets
             resp = self._get(
                 f"/api/node/mo/uni/tn-{bd_dict[bd]['tenant']}/BD-{bd}.json?query-target=children&target-subtree-class=fvSubnet"
