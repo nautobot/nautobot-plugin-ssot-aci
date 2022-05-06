@@ -3,7 +3,7 @@
 import logging
 import os
 import re
-from ipaddress import IPv4Network
+from ipaddress import ip_network
 from diffsync import DiffSync
 from diffsync.exceptions import ObjectNotFound
 from nautobot_ssot_aci.constant import PLUGIN_CFG
@@ -185,6 +185,7 @@ class AciAdapter(DiffSync):
                                 message="Duplicate DiffSync IPAddress Object found and has not been loaded.",
                             )
 
+
     def load_prefixes(self):
         """Load Bridge domain subnets from ACI."""
         bd_dict = self.conn.get_bds(tenant="all")
@@ -197,8 +198,9 @@ class AciAdapter(DiffSync):
                     vrf_tenant = None
                 if tenant_name not in PLUGIN_CFG.get("ignore_tenants"):
                     for subnet in bd_dict[bd]["subnets"]:
+
                         new_prefix = self.prefix(
-                            prefix=str(IPv4Network(subnet[0], strict=False)),
+                            prefix=str(ip_network(subnet[0], strict=False)),
                             status="Active",
                             site=self.site,
                             description=f"ACI Bridge Domain: {bd}",
