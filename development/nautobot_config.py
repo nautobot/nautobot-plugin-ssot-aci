@@ -286,7 +286,7 @@ PLUGINS_CONFIG = {
         # Manufacturer name. Specify existing, or a new one with this name will be created.
         "manufacturer_name": "Cisco",
         # Exclude any tenants you would not like to bring over from ACI.
-        "ignore_tenants": ["common", "mgmt", "infra"],
+        "ignore_tenants": ["mgmt", "infra"],
         # The below value will appear in the Comments field on objects created in Nautobot
         "comments": "Created by ACI SSoT Plugin",
         # Site to associate objects. Specify existing, or a new site with this name will be created.

@@ -456,14 +456,20 @@ class NautobotPrefix(Prefix):
     @classmethod
     def create(cls, diffsync, ids, attrs):
         """Create Prefix object in Nautobot."""
-        _tenant_name = attrs["tenant"]
+        # _tenant_name = attrs["tenant"]
+        # try:
+        #     _tenant = OrmTenant.objects.get(name=attrs["tenant"])
+        # except ObjectNotCreated:
+        #     diffsync.job.log_warning(message=f"Tenant {_tenant_name} not found!")
         try:
-            _tenant = OrmTenant.objects.get(name=attrs["tenant"])
-        except ObjectNotCreated:
-            diffsync.job.log_warning(message=f"Tenant {_tenant_name} not found!")
-        if attrs["vrf"]:
+            vrf_tenant = OrmTenant.objects.get(name=attrs["vrf_tenant"])
+        except OrmTenant.DoesNotExist:
+            diffsync.job.log_warning(message=f"Tenant {attrs['vrf_tenant']} not found for VRF {attrs['vrf']}")
+            vrf_tenant = None
+
+        if attrs["vrf"] and vrf_tenant:
             try:
-                vrf = OrmVrf.objects.get(name=attrs["vrf"], tenant=_tenant)
+                vrf = OrmVrf.objects.get(name=attrs["vrf"], tenant=OrmTenant.objects.get(name=attrs["vrf_tenant"]))
             except OrmVrf.DoesNotExist:
                 diffsync.job.log_warning(message=f"VRF {attrs['vrf']} not found to associate prefix {ids['prefix']}")
                 vrf = None
