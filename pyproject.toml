@@ -85,7 +85,10 @@ disable = """,
     logging-fstring-interpolation,
     invalid-name,
     consider-using-dict-items,
-    duplicate-code
+    duplicate-code,
+    useless-super-delegation,
+    too-many-branches,
+    too-many-nested-blocks
     """
 
 [tool.pylint.miscellaneous]

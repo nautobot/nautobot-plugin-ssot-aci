@@ -1,7 +1,9 @@
 """Diffsync Adapter for Nautobot."""
 
 import logging
+from collections import defaultdict
 from diffsync import DiffSync
+from django.db.models import ProtectedError
 from nautobot.tenancy.models import Tenant
 from nautobot.dcim.models import DeviceType, DeviceRole, Device, InterfaceTemplate, Interface
 from nautobot.ipam.models import IPAddress, Prefix, VRF
@@ -22,6 +24,8 @@ logger = logging.getLogger("rq.worker")
 
 class NautobotAdapter(DiffSync):
     """Nautobot adapter for DiffSync."""
+
+    objects_to_delete = defaultdict(list)
 
     tenant = NautobotTenant
     vrf = NautobotVrf
@@ -59,6 +63,31 @@ class NautobotAdapter(DiffSync):
         self.site = client.get("site")
         self.site_tag = Tag.objects.get_or_create(name=self.site)[0]
         self.tenant_prefix = client.get("tenant_prefix")
+
+    def sync_complete(self, source: DiffSync, *args, **kwargs):
+        """Clean up function for DiffSync sync.
+
+        Once the sync is complete, this function runs deleting any objects
+        from Nautobot that need to be deleted in a specific order.
+
+        Args:
+            source (DiffSync): DiffSync
+        """
+        for grouping in (
+            "ipaddress",
+            "prefix",
+            "vrf",
+            "tenant",
+        ):
+            for nautobot_object in self.objects_to_delete[grouping]:
+                try:
+                    logger.warning(f"OBJECT: {nautobot_object}")
+                    nautobot_object.delete()
+                except ProtectedError:
+                    self.job.log_failure(obj=nautobot_object, message="Deletion failed protected object")
+            self.objects_to_delete[grouping] = []
+
+        return super().sync_complete(source, *args, **kwargs)
 
     def load_tenants(self):
         """Method to load Tenants from Nautobot."""
@@ -164,8 +193,13 @@ class NautobotAdapter(DiffSync):
                 tenant_name = None
             if nbipaddr.vrf:
                 vrf_name = nbipaddr.vrf.name
+                if nbipaddr.vrf.tenant.name:
+                    vrf_tenant = nbipaddr.vrf.tenant.name
+                else:
+                    vrf_tenant = None
             else:
                 vrf_name = None
+                vrf_tenant = None
             _ipaddress = self.ip_address(
                 address=str(nbipaddr.address),
                 status=nbipaddr.status.name,
@@ -174,6 +208,7 @@ class NautobotAdapter(DiffSync):
                 device=device_name,
                 interface=interface_name,
                 vrf=vrf_name,
+                vrf_tenant=vrf_tenant,
                 site=self.site,
                 site_tag=self.site,
             )
@@ -185,13 +220,13 @@ class NautobotAdapter(DiffSync):
             if nbprefix.vrf:
                 vrf = nbprefix.vrf.name
                 if nbprefix.vrf.tenant.name:
-                    vrf_tenant = f"{self.tenant_prefix}:{nbprefix.vrf.tenant.name}"
+                    vrf_tenant = nbprefix.vrf.tenant.name
                 else:
                     vrf_tenant = None
             else:
                 vrf = None
                 vrf_tenant = None
-            
+
             _prefix = self.prefix(
                 prefix=str(nbprefix.prefix),
                 status=nbprefix.status.name,

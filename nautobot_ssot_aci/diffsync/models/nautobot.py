@@ -58,9 +58,10 @@ class NautobotTenant(Tenant):
     def delete(self):
         """Delete Tenant object in Nautobot."""
         self.diffsync.job.log_warning(f"Tenant {self.name} will be deleted.")
+        super().delete()
         _tenant = OrmTenant.objects.get(name=self.get_identifiers()["name"])
-        _tenant.delete()
-        return super().delete()
+        self.diffsync.objects_to_delete["tenant"].append(_tenant)
+        return self
 
 
 class NautobotVrf(Vrf):
@@ -95,9 +96,11 @@ class NautobotVrf(Vrf):
     def delete(self):
         """Delete VRF object in Nautobot."""
         self.diffsync.job.log_warning(f"VRF {self.name} will be deleted.")
-        _vrf = OrmVrf.objects.get(name=self.get_identifiers()["name"])
-        _vrf.delete()
-        return super().delete()
+        super().delete()
+        _tenant = OrmTenant.objects.get(name=self.tenant)
+        _vrf = OrmVrf.objects.get(name=self.name, tenant=_tenant)
+        self.diffsync.objects_to_delete["vrf"].append(_vrf)  # pylint: disable=protected-access
+        return self
 
 
 class NautobotDeviceType(DeviceType):
@@ -389,21 +392,26 @@ class NautobotIPAddress(IPAddress):
         else:
             obj_type = None
             obj_id = None
-        if attrs["tenant"]:
-            tenant_name = OrmTenant.objects.get(name=attrs["tenant"])
+        if ids["tenant"]:
+            tenant_name = OrmTenant.objects.get(name=ids["tenant"])
         else:
             tenant_name = None
-        if attrs["vrf"]:
+        try:
+            vrf_tenant = OrmTenant.objects.get(name=attrs["vrf_tenant"])
+        except OrmTenant.DoesNotExist:
+            diffsync.job.log_warning(message=f"Tenant {attrs['vrf_tenant']} not found for VRF {ids['vrf']}")
+            vrf_tenant = None
+
+        if ids["vrf"] and vrf_tenant:
             try:
-                vrf_name = OrmVrf.objects.get(name=attrs["vrf"], tenant=OrmTenant.objects.get(name=attrs["tenant"]))
+                vrf_name = OrmVrf.objects.get(name=ids["vrf"], tenant=OrmTenant.objects.get(name=vrf_tenant))
             except OrmVrf.DoesNotExist:
-                diffsync.job.log_warning(
-                    message=f"VRF {attrs['vrf']} not found to associate IP Address {ids['address']}"
-                )
+                diffsync.job.log_warning(message=f"VRF {ids['vrf']} not found to associate IP Address {ids['address']}")
                 vrf_name = None
 
         else:
             vrf_name = None
+
         _ipaddress = OrmIPAddress(
             address=ids["address"],
             status=Status.objects.get(name=attrs["status"]),
@@ -429,7 +437,7 @@ class NautobotIPAddress(IPAddress):
         if attrs.get("description"):
             _ipaddress.description = attrs["description"]
         if attrs.get("tenant"):
-            _ipaddress.tenant = OrmTenant.objects.get(name=attrs["tenant"])
+            _ipaddress.tenant = OrmTenant.objects.get(name=self.get_identifiers()["tenant"])
         if attrs.get("device") and attrs.get("interface"):
             _ipaddress.assigned_object_type = ContentType.objects.get(model="interface")
             _ipaddress.assigned_object_id = (
@@ -439,15 +447,27 @@ class NautobotIPAddress(IPAddress):
             )
         if attrs.get("status"):
             _ipaddress.status = Status.objects.get(name=attrs["status"])
+        if attrs.get("tenant"):
+            _ipaddress.tenant = OrmTenant.objects.get(name=self.get_identifiers()["tenant"])
+        if attrs.get("vrf") and attrs.get("vrf_tenant"):
+            _ipaddress.vrf = OrmVrf.objects.get(
+                name=self.get_identifiers()["vrf"],
+                tenant=OrmTenant.objects.get(name=self.get_identifiers()["vrf_tenant"]),
+            )
         _ipaddress.validated_save()
         return super().update(attrs)
 
     def delete(self):
         """Delete IPAddress object in Nautobot."""
         self.diffsync.job.log_warning(f"IP Address {self.address} will be deleted.")
-        _ipaddress = OrmIPAddress.objects.get(address=self.get_identifiers()["address"])
-        _ipaddress.delete()
-        return super().delete()
+        super().delete()
+        _ipaddress = OrmIPAddress.objects.get(
+            address=self.get_identifiers()["address"],
+            tenant=OrmTenant.objects.get(name=self.tenant),
+            vrf=OrmVrf.objects.get(name=self.vrf, tenant=OrmTenant.objects.get(name=self.vrf_tenant)),
+        )
+        self.diffsync.objects_to_delete["ipaddress"].append(_ipaddress)  # pylint: disable=protected-access
+        return self
 
 
 class NautobotPrefix(Prefix):
@@ -456,22 +476,17 @@ class NautobotPrefix(Prefix):
     @classmethod
     def create(cls, diffsync, ids, attrs):
         """Create Prefix object in Nautobot."""
-        # _tenant_name = attrs["tenant"]
-        # try:
-        #     _tenant = OrmTenant.objects.get(name=attrs["tenant"])
-        # except ObjectNotCreated:
-        #     diffsync.job.log_warning(message=f"Tenant {_tenant_name} not found!")
         try:
             vrf_tenant = OrmTenant.objects.get(name=attrs["vrf_tenant"])
         except OrmTenant.DoesNotExist:
             diffsync.job.log_warning(message=f"Tenant {attrs['vrf_tenant']} not found for VRF {attrs['vrf']}")
             vrf_tenant = None
 
-        if attrs["vrf"] and vrf_tenant:
+        if ids["vrf"] and vrf_tenant:
             try:
-                vrf = OrmVrf.objects.get(name=attrs["vrf"], tenant=OrmTenant.objects.get(name=attrs["vrf_tenant"]))
+                vrf = OrmVrf.objects.get(name=ids["vrf"], tenant=OrmTenant.objects.get(name=attrs["vrf_tenant"]))
             except OrmVrf.DoesNotExist:
-                diffsync.job.log_warning(message=f"VRF {attrs['vrf']} not found to associate prefix {ids['prefix']}")
+                diffsync.job.log_warning(message=f"VRF {ids['vrf']} not found to associate prefix {ids['prefix']}")
                 vrf = None
         else:
             vrf = None
@@ -479,7 +494,7 @@ class NautobotPrefix(Prefix):
             prefix=ids["prefix"],
             status=Status.objects.get(name=attrs["status"]),
             description=attrs["description"],
-            tenant=OrmTenant.objects.get(name=attrs["tenant"]),
+            tenant=OrmTenant.objects.get(name=ids["tenant"]),
             site=Site.objects.get(name=ids["site"]),
             vrf=vrf,
         )
@@ -492,21 +507,31 @@ class NautobotPrefix(Prefix):
         """Update Prefix object in Nautobot."""
         _tenant = OrmTenant.objects.get(name=self.tenant)
         _prefix = OrmPrefix.objects.get(prefix=self.prefix, tenant=_tenant)
+
         if attrs.get("description"):
             _prefix.description = attrs["description"]
         if attrs.get("tenant"):
-            _prefix.tenant = OrmTenant.objects.get(name=attrs["tenant"])
+            _prefix.tenant = OrmTenant.objects.get(name=self.get_identifiers()["tenant"])
         if attrs.get("status"):
             _prefix.status = Status.objects.get(name=attrs["status"])
+        if self.get_identifiers().get("vrf") and attrs.get("vrf_tenant"):
+            _prefix.vrf = OrmVrf.objects.get(
+                name=self.get_identifiers()["vrf"], tenant=OrmTenant.objects.get(name=attrs["vrf_tenant"])
+            )
         _prefix.validated_save()
         return super().update(attrs)
 
     def delete(self):
         """Delete Prefix object in Nautobot."""
         self.diffsync.job.log_warning(f"Prefix {self.prefix} will be deleted.")
-        _prefix = OrmPrefix.objects.get(prefix=self.get_identifiers()["prefix"])
-        _prefix.delete()
-        return super().delete()
+        super().delete()
+        _prefix = OrmPrefix.objects.get(
+            prefix=self.get_identifiers()["prefix"],
+            tenant=OrmTenant.objects.get(name=self.tenant),
+            vrf=OrmVrf.objects.get(name=self.vrf, tenant=OrmTenant.objects.get(name=self.vrf_tenant)),
+        )
+        self.diffsync.objects_to_delete["prefix"].append(_prefix)  # pylint: disable=protected-access
+        return self
 
 
 NautobotDevice.update_forward_refs()
