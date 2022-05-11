@@ -524,13 +524,14 @@ class NautobotPrefix(Prefix):
     def delete(self):
         """Delete Prefix object in Nautobot."""
         self.diffsync.job.log_warning(f"Prefix {self.prefix} will be deleted.")
+        super().delete()
         _prefix = OrmPrefix.objects.get(
             prefix=self.get_identifiers()["prefix"],
             tenant=OrmTenant.objects.get(name=self.tenant),
             vrf=OrmVrf.objects.get(name=self.vrf, tenant=OrmTenant.objects.get(name=self.vrf_tenant)),
         )
-        _prefix.delete()
-        return super().delete()
+        self.diffsync.objects_to_delete["prefix"].append(_prefix)  # pylint: disable=protected-access
+        return self
 
 
 NautobotDevice.update_forward_refs()

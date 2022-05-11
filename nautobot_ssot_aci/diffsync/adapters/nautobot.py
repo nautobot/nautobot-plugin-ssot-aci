@@ -75,6 +75,7 @@ class NautobotAdapter(DiffSync):
         """
         for grouping in (
             "ipaddress",
+            "prefix",
             "vrf",
             "tenant",
         ):
