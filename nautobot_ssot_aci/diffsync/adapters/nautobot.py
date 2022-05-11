@@ -164,8 +164,13 @@ class NautobotAdapter(DiffSync):
                 tenant_name = None
             if nbipaddr.vrf:
                 vrf_name = nbipaddr.vrf.name
+                if nbipaddr.vrf.tenant.name:
+                    vrf_tenant = nbipaddr.vrf.tenant.name
+                else:
+                    vrf_tenant = None
             else:
                 vrf_name = None
+                vrf_tenant = None
             _ipaddress = self.ip_address(
                 address=str(nbipaddr.address),
                 status=nbipaddr.status.name,
@@ -174,6 +179,7 @@ class NautobotAdapter(DiffSync):
                 device=device_name,
                 interface=interface_name,
                 vrf=vrf_name,
+                vrf_tenant=vrf_tenant,
                 site=self.site,
                 site_tag=self.site,
             )
@@ -185,7 +191,7 @@ class NautobotAdapter(DiffSync):
             if nbprefix.vrf:
                 vrf = nbprefix.vrf.name
                 if nbprefix.vrf.tenant.name:
-                    vrf_tenant = f"{self.tenant_prefix}:{nbprefix.vrf.tenant.name}"
+                    vrf_tenant = nbprefix.vrf.tenant.name
                 else:
                     vrf_tenant = None
             else:
