@@ -118,8 +118,10 @@ class IPAddress(DiffSyncModel):
     _identifiers = (
         "address",
         "site",
+        "vrf",
+        "tenant",
     )
-    _attributes = ("status", "description", "device", "interface", "vrf", "tenant", "vrf_tenant", "site_tag")
+    _attributes = ("status", "description", "device", "interface", "vrf_tenant", "site_tag")
 
     address: str
     status: str
@@ -140,8 +142,10 @@ class Prefix(DiffSyncModel):
     _identifiers = (
         "prefix",
         "site",
+        "vrf",
+        "tenant",
     )
-    _attributes = ("status", "description", "vrf", "tenant", "vrf_tenant", "site_tag")
+    _attributes = ("status", "description", "vrf_tenant", "site_tag")
 
     prefix: str
     status: str

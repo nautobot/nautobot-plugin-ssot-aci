@@ -167,14 +167,14 @@ class AciAdapter(DiffSync):
                         site_tag=self.site,
                     )
                     if not bd_dict[bd]["vrf"] or (not bd_dict[bd]["vrf"] and not vrf_tenant):
-                            self.job.log_warning(
-                                obj=new_ipaddress,
-                                message=f"VRF configured on Bridge Domain {bd} in tenant {tenant_name} is invalid, skipping."
-                            )
+                        self.job.log_warning(
+                            obj=new_ipaddress,
+                            message=f"VRF configured on Bridge Domain {bd} in tenant {tenant_name} is invalid, skipping.",
+                        )
                     else:
-                    # Using Try/Except to check for an existing loaded object
-                    # If the object doesn't exist we can create it
-                    # Otherwise we log a message warning the user of the duplicate.
+                        # Using Try/Except to check for an existing loaded object
+                        # If the object doesn't exist we can create it
+                        # Otherwise we log a message warning the user of the duplicate.
                         try:
                             self.get(obj=new_ipaddress, identifier=new_ipaddress.get_unique_id())
                         except ObjectNotFound:
@@ -184,7 +184,6 @@ class AciAdapter(DiffSync):
                                 obj=new_ipaddress,
                                 message="Duplicate DiffSync IPAddress Object found and has not been loaded.",
                             )
-
 
     def load_prefixes(self):
         """Load Bridge domain subnets from ACI."""
@@ -212,12 +211,12 @@ class AciAdapter(DiffSync):
                         if not bd_dict[bd]["vrf"] or (bd_dict[bd]["vrf"] and not vrf_tenant):
                             self.job.log_warning(
                                 obj=new_prefix,
-                                message=f"VRF configured on Bridge Domain {bd} in tenant {tenant_name} is invalid, skipping."
+                                message=f"VRF configured on Bridge Domain {bd} in tenant {tenant_name} is invalid, skipping.",
                             )
                         else:
-                        # Using Try/Except to check for an existing loaded object
-                        # If the object doesn't exist we can create it
-                        # Otherwise we log a message warning the user of the duplicate.
+                            # Using Try/Except to check for an existing loaded object
+                            # If the object doesn't exist we can create it
+                            # Otherwise we log a message warning the user of the duplicate.
                             try:
                                 self.get(obj=new_prefix, identifier=new_prefix.get_unique_id())
                             except ObjectNotFound:
