@@ -78,6 +78,7 @@ class NautobotAdapter(DiffSync):
             "prefix",
             "vrf",
             "tenant",
+            "device",
         ):
             for nautobot_object in self.objects_to_delete[grouping]:
                 try:

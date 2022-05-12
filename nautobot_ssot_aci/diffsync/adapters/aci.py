@@ -290,33 +290,40 @@ class AciAdapter(DiffSync):
 
         for node in self.devices:
             # Load management and controller interfaces from YAML files
-            device_specs = load_yamlfile(
-                os.path.join(
+
+            fn = os.path.join(
                     os.getcwd(), "nautobot_ssot_aci", "diffsync", "device-types", f"{self.devices[node]['model']}.yaml"
                 )
-            )
-            for _interface in interfaces[node]:
-                if_list = [
-                    intf for intf in device_specs["interfaces"] if intf["name"] == _interface.replace("eth", "Ethernet")
-                ]
-                if if_list:
-                    intf_type = if_list[0]["type"]
-                else:
-                    intf_type = "other"
-                new_interface = self.interface(
-                    name=_interface.replace("eth", "Ethernet"),
-                    device=self.devices[node]["name"],
-                    site=self.site,
-                    description=interfaces[node][_interface]["descr"],
-                    gbic_vendor=interfaces[node][_interface]["gbic_vendor"],
-                    gbic_type=interfaces[node][_interface]["gbic_type"],
-                    gbic_sn=interfaces[node][_interface]["gbic_sn"],
-                    gbic_model=interfaces[node][_interface]["gbic_model"],
-                    state=interfaces[node][_interface]["state"],
-                    type=intf_type,
-                    site_tag=self.site,
+            if os.path.exists(fn):
+                device_specs = load_yamlfile(
+                    os.path.join(
+                        os.getcwd(), "nautobot_ssot_aci", "diffsync", "device-types", f"{self.devices[node]['model']}.yaml"
+                    )
                 )
-                self.add(new_interface)
+                for _interface in interfaces[node]:
+                    if_list = [
+                        intf for intf in device_specs["interfaces"] if intf["name"] == _interface.replace("eth", "Ethernet")
+                    ]
+                    if if_list:
+                        intf_type = if_list[0]["type"]
+                    else:
+                        intf_type = "other"
+                    new_interface = self.interface(
+                        name=_interface.replace("eth", "Ethernet"),
+                        device=self.devices[node]["name"],
+                        site=self.site,
+                        description=interfaces[node][_interface]["descr"],
+                        gbic_vendor=interfaces[node][_interface]["gbic_vendor"],
+                        gbic_type=interfaces[node][_interface]["gbic_type"],
+                        gbic_sn=interfaces[node][_interface]["gbic_sn"],
+                        gbic_model=interfaces[node][_interface]["gbic_model"],
+                        state=interfaces[node][_interface]["state"],
+                        type=intf_type,
+                        site_tag=self.site,
+                    )
+                    self.add(new_interface)
+            else:
+                logger.warning(f"No YAML file exists in device-types for model {self.devices[node]['model']}, skipping interface creation")
 
             for _interface in device_specs["interfaces"]:
                 if_list = [intf for intf in device_specs["interfaces"] if intf["name"] == _interface]

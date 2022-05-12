@@ -212,11 +212,11 @@ class NautobotDevice(Device):
     def delete(self):
         """Delete Device object in Nautobot."""
         self.diffsync.job.log_warning(f"Device {self.name} will be deleted.")
+        super().delete()
         _device = OrmDevice.objects.get(
-            name=self.get_identifiers()["name"], site=Site.objects.get(name=self.get_attributes()["site"])
-        )
-        _device.delete()
-        return super().delete()
+            name=self.name, site=Site.objects.get(name=self.site))
+        self.diffsync.objects_to_delete["device"].append(_device)  # pylint: disable=protected-access
+        return self
 
 
 class NautobotInterfaceTemplate(InterfaceTemplate):
@@ -361,13 +361,19 @@ class NautobotInterface(Interface):
     def delete(self):
         """Delete Interface object in Nautobot."""
         self.diffsync.job.log_warning(f"Interface {self.name} will be deleted.")
-        _interface = OrmInterface.objects.get(
-            name=self.get_identifiers()["name"],
+        try:
             device=OrmDevice.objects.get(
-                name=self.get_identifiers()["device"], site=Site.objects.get(name=self.get_identifiers()["site"])
-            ),
-        )
-        _interface.delete()
+                name=self.get_identifiers()["device"], 
+                site=Site.objects.get(name=self.get_identifiers()["site"])
+            )
+        except OrmDevice.DoesNotExist:
+            self.diffsync.job.log_warning(f"Device {self.get_identifiers()['device']} does not exist, skipping deletion of interface {self.name}")
+        else:
+            _interface = OrmInterface.objects.get(
+                name=self.get_identifiers()["name"],
+                device=device
+                )
+            _interface.delete()
         return super().delete()
 
 
