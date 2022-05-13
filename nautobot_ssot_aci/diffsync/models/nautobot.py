@@ -70,7 +70,6 @@ class NautobotVrf(Vrf):
     @classmethod
     def create(cls, diffsync, ids, attrs):
         """Create VRF object in Nautobot."""
-        # TODO diffsync.job.log_warning(f"Tenant {self.name} will be deleted.")
         _tenant = OrmTenant.objects.get(name=ids["tenant"])
         _vrf = OrmVrf(name=ids["name"], tenant=_tenant)
         _vrf.tags.add(Tag.objects.get(slug=PLUGIN_CFG.get("tag").lower().replace(" ", "-")))
