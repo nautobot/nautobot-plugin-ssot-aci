@@ -244,8 +244,6 @@ class NautobotAdapter(DiffSync):
         """Method to load models with data from Nautbot."""
         self.load_tenants()
         self.load_vrfs()
-        #        self.load_interfacetemplates()
-        #        self.load_deviceroles()
         self.load_devicetypes()
         self.load_devices()
         self.load_interfaces()

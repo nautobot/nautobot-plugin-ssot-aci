@@ -278,54 +278,6 @@ class NautobotInterface(Interface):
             _interface.tags.add(Tag.objects.get(slug=PLUGIN_CFG.get("tag_down").lower().replace(" ", "-")))
         _interface.tags.add(Tag.objects.get(name=attrs["site_tag"]))
         _interface.validated_save()
-
-        # Removed interface template sync, so this should no longer be needed
-        # q = OrmInterface.objects.filter(
-        #     name=ids["name"], device=OrmDevice.objects.get(name=ids["device"], site=Site.objects.get(name=ids["site"]))
-        # )
-        # if q.exists():
-        #     # If interface already exists, then update it instead.
-        #     # This will be the case when first creating devices and the interface templates are created.
-        #     # Without this check, the plugin will attempt to create interfaces that were already created as part of the interface template.
-        #     # This results in a ValidationError: 'Interface with this Device and Name already exists.'
-        #     _interface = OrmInterface.objects.get(
-        #         name=ids["name"],
-        #         device=OrmDevice.objects.get(name=ids["device"], site=Site.objects.get(name=ids["site"])),
-        #     )
-        #     if attrs.get("description"):
-        #         _interface.description = attrs["description"]
-        #     if attrs.get("gbic_vendor"):
-        #         _interface.custom_field_data["gbic_vendor"] = attrs["gbic_vendor"]
-        #     if attrs.get("gbic_type"):
-        #         _interface.custom_field_data["gbic_type"] = attrs["gbic_type"]
-        #     if attrs.get("gbic_sn"):
-        #         _interface.custom_field_data["gbic_sn"] = attrs["gbic_sn"]
-        #     if attrs.get("gbic_model"):
-        #         _interface.custom_field_data["gbic_model"] = attrs["gbic_model"]
-        #     if attrs.get("state") == "up":
-        #         _interface.tags.add(Tag.objects.get(slug=PLUGIN_CFG.get("tag_up").lower().replace(" ", "-")))
-        #     else:
-        #         _interface.tags.add(Tag.objects.get(slug=PLUGIN_CFG.get("tag_down").lower().replace(" ", "-")))
-        #     _interface.tags.add(Tag.objects.get(name=attrs["site_tag"]))
-        #     _interface.validated_save()
-        # else:
-        #     _interface = OrmInterface(
-        #         name=ids["name"],
-        #         device=OrmDevice.objects.get(name=ids["device"], site=Site.objects.get(name=ids["site"])),
-        #         description=attrs["description"],
-        #         type="other",
-        #     )
-        #     _interface.custom_field_data["gbic_vendor"] = attrs["gbic_vendor"]
-        #     _interface.custom_field_data["gbic_sn"] = attrs["gbic_sn"]
-        #     _interface.custom_field_data["gbic_type"] = attrs["gbic_type"]
-        #     _interface.custom_field_data["gbic_model"] = attrs["gbic_model"]
-        #     if attrs.get("state") == "up":
-        #         _interface.tags.add(Tag.objects.get(slug=PLUGIN_CFG.get("tag_up").lower().replace(" ", "-")))
-        #     else:
-        #         _interface.tags.add(Tag.objects.get(slug=PLUGIN_CFG.get("tag_down").lower().replace(" ", "-")))
-        #     _interface.tags.add(Tag.objects.get(name=attrs["site_tag"]))
-        #     _interface.validated_save()
-
         return super().create(ids=ids, diffsync=diffsync, attrs=attrs)
 
     def update(self, attrs):

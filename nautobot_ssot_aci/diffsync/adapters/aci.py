@@ -229,26 +229,6 @@ class AciAdapter(DiffSync):
 
     def load_devicetypes(self):
         """Load device types from YAML files."""
-        # device_types = {self.devices[key]["model"] for key in self.devices}
-        # for _devicetype in device_types:
-        #     if f"{_devicetype}.yaml" in os.listdir("nautobot_ssot_aci/diffsync/device-types"):
-        #         device_specs = load_yamlfile(
-        #             os.path.join(os.getcwd(), "nautobot_ssot_aci", "diffsync", "device-types", f"{_devicetype}.yaml")
-        #         )
-        #         u_height = device_specs["u_height"]
-        #         model = device_specs["model"]
-        #     else:
-        #         u_height = 1
-        #         model = _devicetype
-        #     new_devicetype = self.device_type(
-        #         model=model,
-        #         manufacturer=PLUGIN_CFG.get("manufacturer_name"),
-        #         part_nbr=_devicetype,
-        #         comments=PLUGIN_CFG.get("comments", ""),
-        #         u_height=u_height,
-        #     )
-        #     self.add(new_devicetype)
-
         for dt in os.listdir("nautobot_ssot_aci/diffsync/device-types"):
             device_specs = load_yamlfile(os.path.join("nautobot_ssot_aci", "diffsync", "device-types", dt))
             _devicetype = self.device_type(
@@ -395,9 +375,7 @@ class AciAdapter(DiffSync):
         """Method for one stop shop loading of all models."""
         self.load_tenants()
         self.load_vrfs()
-        #        self.load_interfacetemplates()
         self.load_devicetypes()
-        #        self.load_deviceroles()
         self.load_devices()
         self.load_interfaces()
         self.load_prefixes()
