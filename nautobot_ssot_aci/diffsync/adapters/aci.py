@@ -89,7 +89,6 @@ class AciAdapter(DiffSync):
 
     def load_vrfs(self):
         """Load VRFs from ACI."""
-        # TODO Check for dups
         vrf_list = self.conn.get_vrfs(tenant="all")
         for _vrf in vrf_list:
             vrf_name = _vrf["name"]
