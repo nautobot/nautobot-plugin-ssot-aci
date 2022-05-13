@@ -75,14 +75,14 @@ def device_custom_fields(apps, **kwargs):
         {
             "name": "pod_id",
             "type": CustomFieldTypeChoices.TYPE_INTEGER,
-            "label": "Pod ID",
+            "label": "ACI Pod ID",
             "filter_logic": "loose",
             "description": "PodID added by SSoT plugin",
         },
         {
             "name": "node_id",
             "type": CustomFieldTypeChoices.TYPE_INTEGER,
-            "label": "Node ID",
+            "label": "ACI Node ID",
             "filter_logic": "loose",
             "description": "NodeID added by SSoT plugin",
         },
