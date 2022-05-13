@@ -468,11 +468,15 @@ class TestAciMethods(unittest.TestCase):  # pylint: disable=too-many-public-meth
 
         mocked_fvRsCtx_1 = Mock()
         mocked_fvRsCtx_1.status_code = 200
-        mocked_fvRsCtx_1.json.return_value = {"imdata": [{"fvRsCtx": {"attributes": {"tnFvCtxName": "vrf1", "tDn": "uni/tn-ntc-chatops/ctx-vrf1"}}}]}
+        mocked_fvRsCtx_1.json.return_value = {
+            "imdata": [{"fvRsCtx": {"attributes": {"tnFvCtxName": "vrf1", "tDn": "uni/tn-ntc-chatops/ctx-vrf1"}}}]
+        }
 
         mocked_fvRsCtx_2 = Mock()
         mocked_fvRsCtx_2.status_code = 200
-        mocked_fvRsCtx_2.json.return_value = {"imdata": [{"fvRsCtx": {"attributes": {"tnFvCtxName": "vrf2", "tDn": "uni/tn-ntc-chatops/ctx-vrf1"}}}]}
+        mocked_fvRsCtx_2.json.return_value = {
+            "imdata": [{"fvRsCtx": {"attributes": {"tnFvCtxName": "vrf2", "tDn": "uni/tn-ntc-chatops/ctx-vrf1"}}}]
+        }
 
         mocked_fvSubnet_1 = Mock()
         mocked_fvSubnet_1.status_code = 200
