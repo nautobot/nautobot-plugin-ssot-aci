@@ -2,6 +2,7 @@
 
 import logging
 from diffsync.exceptions import ObjectNotCreated
+from django.utils.text import slugify
 from django.contrib.contenttypes.models import ContentType
 from nautobot.tenancy.models import Tenant as OrmTenant
 from nautobot.dcim.models import DeviceType as OrmDeviceType
@@ -116,7 +117,8 @@ class NautobotDeviceType(DeviceType):
             u_height=attrs["u_height"],
             comments=attrs["comments"],
         )
-        _devicetype.tags.add(Tag.objects.get(slug=PLUGIN_CFG.get("tag").lower().replace(" ", "-")))
+        _tag = Tag.objects.get(slug=slugify(PLUGIN_CFG.get("tag")))
+        _devicetype.tags.add(_tag)
         _devicetype.validated_save()
 
         return super().create(ids=ids, diffsync=diffsync, attrs=attrs)
@@ -147,7 +149,12 @@ class NautobotDeviceRole(DeviceRole):
     @classmethod
     def create(cls, diffsync, ids, attrs):
         """Create DeviceRole object in Nautobot."""
-        _devicerole = OrmDeviceRole(name=ids["name"], description=attrs["description"])
+        _ids_name = ids["name"]
+        _devicerole = OrmDeviceRole(
+            name=_ids_name,
+            slug=f"{_ids_name}-ssot-aci",
+            description=attrs["description"]
+        )
         _devicerole.validated_save()
         return super().create(ids=ids, diffsync=diffsync, attrs=attrs)
 
