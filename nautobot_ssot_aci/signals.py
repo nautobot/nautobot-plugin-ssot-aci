@@ -66,14 +66,14 @@ def device_custom_fields(apps, **kwargs):
 
     for device_cf_dict in [
         {
-            "name": "pod_id",
+            "name": "aci_pod_id",
             "type": CustomFieldTypeChoices.TYPE_INTEGER,
             "label": "Cisco ACI Pod ID",
             "filter_logic": "loose",
             "description": "PodID added by SSoT plugin",
         },
         {
-            "name": "node_id",
+            "name": "aci_node_id",
             "type": CustomFieldTypeChoices.TYPE_INTEGER,
             "label": "Cisco ACI Node ID",
             "filter_logic": "loose",

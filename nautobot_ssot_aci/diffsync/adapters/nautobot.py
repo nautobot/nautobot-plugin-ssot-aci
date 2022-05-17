@@ -173,8 +173,8 @@ class NautobotAdapter(DiffSync):
                 serial=nbdevice.serial,
                 comments=nbdevice.comments,
                 site=nbdevice.site.name,
-                node_id=nbdevice.custom_field_data["node_id"],
-                pod_id=nbdevice.custom_field_data["pod_id"],
+                node_id=nbdevice.custom_field_data["aci_node_id"],
+                pod_id=nbdevice.custom_field_data["aci_pod_id"],
                 site_tag=self.site,
             )
             self.add(_device)

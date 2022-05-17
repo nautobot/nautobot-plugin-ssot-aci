@@ -183,8 +183,8 @@ class NautobotDevice(Device):
             status=Status.objects.get(name="Active"),
         )
 
-        _device.custom_field_data["node_id"] = attrs["node_id"]
-        _device.custom_field_data["pod_id"] = attrs["pod_id"]
+        _device.custom_field_data["aci_node_id"] = attrs["node_id"]
+        _device.custom_field_data["aci_pod_id"] = attrs["pod_id"]
         _device.tags.add(Tag.objects.get(slug=PLUGIN_CFG.get("tag").lower().replace(" ", "-")))
         _device.tags.add(Tag.objects.get(name=attrs["site_tag"]))
         _device.validated_save()
@@ -202,9 +202,9 @@ class NautobotDevice(Device):
         if attrs.get("comments"):
             _device.comments = attrs["comments"]
         if attrs.get("node_id"):
-            _device.custom_field_data["node_id"] = attrs["node_id"]
+            _device.custom_field_data["aci_node_id"] = attrs["node_id"]
         if attrs.get("pod_id"):
-            _device.custom_field_data["pod_id"] = attrs["pod_id"]
+            _device.custom_field_data["aci_pod_id"] = attrs["pod_id"]
         _device.validated_save()
         return super().update(attrs)
 
