@@ -1,6 +1,7 @@
 """Post Migrate Welcome Wizard Script."""
 import logging
 import random
+from django.utils.text import slugify
 from nautobot.extras.choices import CustomFieldTypeChoices
 from nautobot_ssot_aci.constant import PLUGIN_CFG
 
@@ -14,17 +15,17 @@ def aci_create_tag(apps, **kwargs):
 
     tag.objects.update_or_create(
         name=PLUGIN_CFG.get("tag"),
-        slug=PLUGIN_CFG.get("tag").lower().replace(" ", "-"),
+        slug=slugify(PLUGIN_CFG.get("tag")),
         color=PLUGIN_CFG.get("tag_color"),
     )
     tag.objects.update_or_create(
         name=PLUGIN_CFG.get("tag_up"),
-        slug=PLUGIN_CFG.get("tag_up").lower().replace(" ", "-"),
+        slug=slugify(PLUGIN_CFG.get("tag_up")),
         color=PLUGIN_CFG.get("tag_up_color"),
     )
     tag.objects.update_or_create(
         name=PLUGIN_CFG.get("tag_down"),
-        slug=PLUGIN_CFG.get("tag_down").lower().replace(" ", "-"),
+        slug=slugify(PLUGIN_CFG.get("tag_down")),
         color=PLUGIN_CFG.get("tag_down_color"),
     )
     apics = PLUGIN_CFG.get("apics")
@@ -32,7 +33,7 @@ def aci_create_tag(apps, **kwargs):
         if ("SITE" in key or "STAGE" in key) and not tag.objects.filter(name=apics[key]).exists():
             tag.objects.update_or_create(
                 name=apics[key],
-                slug=apics[key].lower(),
+                slug=slugify(apics[key]),
                 color="".join([random.choice("ABCDEF0123456789") for i in range(6)]),  # nosec
             )
 
