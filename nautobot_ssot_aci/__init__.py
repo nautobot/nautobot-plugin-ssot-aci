@@ -14,7 +14,6 @@ from nautobot.extras.plugins import PluginConfig
 from nautobot_ssot_aci.signals import (
     aci_create_manufacturer,
     aci_create_site,
-    aci_create_device_roles,
     aci_create_tag,
     device_custom_fields,
     interface_custom_fields,
@@ -43,7 +42,6 @@ class NautobotSsotAciConfig(PluginConfig):
         nautobot_database_ready.connect(aci_create_tag, sender=self)
         nautobot_database_ready.connect(aci_create_manufacturer, sender=self)
         nautobot_database_ready.connect(aci_create_site, sender=self)
-        nautobot_database_ready.connect(aci_create_device_roles, sender=self)
         nautobot_database_ready.connect(device_custom_fields, sender=self)
         nautobot_database_ready.connect(interface_custom_fields, sender=self)
 

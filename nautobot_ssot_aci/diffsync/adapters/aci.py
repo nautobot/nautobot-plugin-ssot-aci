@@ -376,6 +376,7 @@ class AciAdapter(DiffSync):
         self.load_tenants()
         self.load_vrfs()
         self.load_devicetypes()
+        self.load_deviceroles()
         self.load_devices()
         self.load_interfaces()
         self.load_prefixes()
