@@ -109,7 +109,6 @@ class NautobotDeviceType(DeviceType):
     @classmethod
     def create(cls, diffsync, ids, attrs):
         """Create DeviceType object in Nautobot."""
-
         _devicetype = OrmDeviceType(
             model=ids["model"],
             manufacturer=Manufacturer.objects.get(name=attrs["manufacturer"]),
@@ -150,11 +149,7 @@ class NautobotDeviceRole(DeviceRole):
     def create(cls, diffsync, ids, attrs):
         """Create DeviceRole object in Nautobot."""
         _ids_name = ids["name"]
-        _devicerole = OrmDeviceRole(
-            name=_ids_name,
-            slug=f"{_ids_name}-ssot-aci",
-            description=attrs["description"]
-        )
+        _devicerole = OrmDeviceRole(name=_ids_name, slug=f"{_ids_name}-ssot-aci", description=attrs["description"])
         _devicerole.validated_save()
         return super().create(ids=ids, diffsync=diffsync, attrs=attrs)
 
