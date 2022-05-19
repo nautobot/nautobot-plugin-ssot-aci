@@ -228,8 +228,9 @@ class AciAdapter(DiffSync):
 
     def load_devicetypes(self):
         """Load device types from YAML files."""
-        for dt in os.listdir("nautobot_ssot_aci/diffsync/device-types"):
-            device_specs = load_yamlfile(os.path.join("nautobot_ssot_aci", "diffsync", "device-types", dt))
+        devicetype_file_path = os.path.join(os.path.dirname(__file__), "..", "device-types")
+        for dt in os.listdir(devicetype_file_path):
+            device_specs = load_yamlfile(os.path.join(devicetype_file_path, dt))
             _devicetype = self.device_type(
                 model=device_specs["model"],
                 manufacturer=PLUGIN_CFG.get("manufacturer_name"),
@@ -375,6 +376,7 @@ class AciAdapter(DiffSync):
         self.load_tenants()
         self.load_vrfs()
         self.load_devicetypes()
+        self.load_deviceroles()
         self.load_devices()
         self.load_interfaces()
         self.load_prefixes()

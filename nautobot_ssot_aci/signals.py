@@ -1,6 +1,7 @@
 """Post Migrate Welcome Wizard Script."""
 import logging
 import random
+from django.utils.text import slugify
 from nautobot.extras.choices import CustomFieldTypeChoices
 from nautobot_ssot_aci.constant import PLUGIN_CFG
 
@@ -14,17 +15,17 @@ def aci_create_tag(apps, **kwargs):
 
     tag.objects.update_or_create(
         name=PLUGIN_CFG.get("tag"),
-        slug=PLUGIN_CFG.get("tag").lower().replace(" ", "-"),
+        slug=slugify(PLUGIN_CFG.get("tag")),
         color=PLUGIN_CFG.get("tag_color"),
     )
     tag.objects.update_or_create(
         name=PLUGIN_CFG.get("tag_up"),
-        slug=PLUGIN_CFG.get("tag_up").lower().replace(" ", "-"),
+        slug=slugify(PLUGIN_CFG.get("tag_up")),
         color=PLUGIN_CFG.get("tag_up_color"),
     )
     tag.objects.update_or_create(
         name=PLUGIN_CFG.get("tag_down"),
-        slug=PLUGIN_CFG.get("tag_down").lower().replace(" ", "-"),
+        slug=slugify(PLUGIN_CFG.get("tag_down")),
         color=PLUGIN_CFG.get("tag_down_color"),
     )
     apics = PLUGIN_CFG.get("apics")
@@ -32,7 +33,7 @@ def aci_create_tag(apps, **kwargs):
         if ("SITE" in key or "STAGE" in key) and not tag.objects.filter(name=apics[key]).exists():
             tag.objects.update_or_create(
                 name=apics[key],
-                slug=apics[key].lower(),
+                slug=slugify(apics[key]),
                 color="".join([random.choice("ABCDEF0123456789") for i in range(6)]),  # nosec
             )
 
@@ -56,14 +57,6 @@ def aci_create_site(apps, **kwargs):
             site.objects.update_or_create(name=apics[key])
 
 
-def aci_create_device_roles(apps, **kwargs):
-    """Add device roles."""
-    device_role = apps.get_model("dcim", "DeviceRole")
-    for role in ["leaf", "spine", "controller"]:
-        logger.info(f"Creating Role: {role}")
-        device_role.objects.update_or_create(name=role, description="Created by ACI SSoT Plugin")
-
-
 def device_custom_fields(apps, **kwargs):
     """Creating custom fields for interfaces."""
     ContentType = apps.get_model("contenttypes", "ContentType")
@@ -73,14 +66,14 @@ def device_custom_fields(apps, **kwargs):
 
     for device_cf_dict in [
         {
-            "name": "pod_id",
+            "name": "aci_pod_id",
             "type": CustomFieldTypeChoices.TYPE_INTEGER,
             "label": "Cisco ACI Pod ID",
             "filter_logic": "loose",
             "description": "PodID added by SSoT plugin",
         },
         {
-            "name": "node_id",
+            "name": "aci_node_id",
             "type": CustomFieldTypeChoices.TYPE_INTEGER,
             "label": "Cisco ACI Node ID",
             "filter_logic": "loose",

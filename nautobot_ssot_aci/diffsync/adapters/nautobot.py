@@ -4,6 +4,7 @@ import logging
 from collections import defaultdict
 from diffsync import DiffSync
 from django.db.models import ProtectedError
+from django.utils.text import slugify
 from nautobot.tenancy.models import Tenant
 from nautobot.dcim.models import DeviceType, DeviceRole, Device, InterfaceTemplate, Interface
 from nautobot.ipam.models import IPAddress, Prefix, VRF
@@ -112,7 +113,8 @@ class NautobotAdapter(DiffSync):
 
     def load_devicetypes(self):
         """Method to load Device Types from Nautobot."""
-        for nbdevicetype in DeviceType.objects.all():
+        _tag = Tag.objects.get(slug=slugify(PLUGIN_CFG.get("tag")))
+        for nbdevicetype in DeviceType.objects.filter(tags=_tag):
             _devicetype = self.device_type(
                 model=nbdevicetype.model,
                 part_nbr=nbdevicetype.part_number,
@@ -159,8 +161,11 @@ class NautobotAdapter(DiffSync):
 
     def load_deviceroles(self):
         """Method to load Device Roles from Nautobot."""
-        for nbdevicerole in DeviceRole.objects.all():
-            _devicerole = self.device_role(name=nbdevicerole.name, description=nbdevicerole.description)
+        for nbdevicerole in DeviceRole.objects.filter(slug__contains="-ssot-aci"):
+            _devicerole = self.device_role(
+                name=nbdevicerole.name,
+                description=nbdevicerole.description,
+            )
             self.add(_devicerole)
 
     def load_devices(self):
@@ -173,8 +178,8 @@ class NautobotAdapter(DiffSync):
                 serial=nbdevice.serial,
                 comments=nbdevice.comments,
                 site=nbdevice.site.name,
-                node_id=nbdevice.custom_field_data["node_id"],
-                pod_id=nbdevice.custom_field_data["pod_id"],
+                node_id=nbdevice.custom_field_data["aci_node_id"],
+                pod_id=nbdevice.custom_field_data["aci_pod_id"],
                 site_tag=self.site,
             )
             self.add(_device)
@@ -245,6 +250,7 @@ class NautobotAdapter(DiffSync):
         self.load_tenants()
         self.load_vrfs()
         self.load_devicetypes()
+        self.load_deviceroles()
         self.load_devices()
         self.load_interfaces()
         self.load_prefixes()

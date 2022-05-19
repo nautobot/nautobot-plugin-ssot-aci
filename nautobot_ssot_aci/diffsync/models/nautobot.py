@@ -2,6 +2,7 @@
 
 import logging
 from diffsync.exceptions import ObjectNotCreated
+from django.utils.text import slugify
 from django.contrib.contenttypes.models import ContentType
 from nautobot.tenancy.models import Tenant as OrmTenant
 from nautobot.dcim.models import DeviceType as OrmDeviceType
@@ -116,7 +117,8 @@ class NautobotDeviceType(DeviceType):
             u_height=attrs["u_height"],
             comments=attrs["comments"],
         )
-        _devicetype.tags.add(Tag.objects.get(slug=PLUGIN_CFG.get("tag").lower().replace(" ", "-")))
+        _tag = Tag.objects.get(slug=slugify(PLUGIN_CFG.get("tag")))
+        _devicetype.tags.add(_tag)
         _devicetype.validated_save()
 
         return super().create(ids=ids, diffsync=diffsync, attrs=attrs)
@@ -147,7 +149,12 @@ class NautobotDeviceRole(DeviceRole):
     @classmethod
     def create(cls, diffsync, ids, attrs):
         """Create DeviceRole object in Nautobot."""
-        _devicerole = OrmDeviceRole(name=ids["name"], description=attrs["description"])
+        _ids_name = ids["name"]
+        _devicerole = OrmDeviceRole(
+            name=_ids_name,
+            slug=f"{_ids_name}-ssot-aci",
+            description=attrs["description"]
+        )
         _devicerole.validated_save()
         return super().create(ids=ids, diffsync=diffsync, attrs=attrs)
 
@@ -183,8 +190,8 @@ class NautobotDevice(Device):
             status=Status.objects.get(name="Active"),
         )
 
-        _device.custom_field_data["node_id"] = attrs["node_id"]
-        _device.custom_field_data["pod_id"] = attrs["pod_id"]
+        _device.custom_field_data["aci_node_id"] = attrs["node_id"]
+        _device.custom_field_data["aci_pod_id"] = attrs["pod_id"]
         _device.tags.add(Tag.objects.get(slug=PLUGIN_CFG.get("tag").lower().replace(" ", "-")))
         _device.tags.add(Tag.objects.get(name=attrs["site_tag"]))
         _device.validated_save()
@@ -202,9 +209,9 @@ class NautobotDevice(Device):
         if attrs.get("comments"):
             _device.comments = attrs["comments"]
         if attrs.get("node_id"):
-            _device.custom_field_data["node_id"] = attrs["node_id"]
+            _device.custom_field_data["aci_node_id"] = attrs["node_id"]
         if attrs.get("pod_id"):
-            _device.custom_field_data["pod_id"] = attrs["pod_id"]
+            _device.custom_field_data["aci_pod_id"] = attrs["pod_id"]
         _device.validated_save()
         return super().update(attrs)
 
