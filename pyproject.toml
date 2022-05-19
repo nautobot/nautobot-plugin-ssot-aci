@@ -18,7 +18,7 @@ packages = [
 
 [tool.poetry.dependencies]
 # Used for local development
-python = "^3.8"
+python = "^3.7"
 nautobot = "^1.2.5"
 nautobot-ssot = "^1.0.1"
 Jinja2 = "<3"
