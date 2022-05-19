@@ -109,7 +109,6 @@ class NautobotDeviceType(DeviceType):
     @classmethod
     def create(cls, diffsync, ids, attrs):
         """Create DeviceType object in Nautobot."""
-
         _devicetype = OrmDeviceType(
             model=ids["model"],
             manufacturer=Manufacturer.objects.get(name=attrs["manufacturer"]),
