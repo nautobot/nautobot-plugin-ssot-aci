@@ -31,7 +31,7 @@ bandit = "*"
 black = "*"
 coverage = "*"
 django-debug-toolbar = "*"
-flake8 = "*"
+flake8 = "~3.9.1"
 invoke = "*"
 ipython = "*"
 mkdocs = "*"
@@ -40,7 +40,6 @@ pylint = "*"
 pylint-django = "*"
 pytest = "*"
 yamllint = "*"
-Markdown = "3.3.6"
 
 [tool.poetry.extras]
 nautobot = ["nautobot"]
