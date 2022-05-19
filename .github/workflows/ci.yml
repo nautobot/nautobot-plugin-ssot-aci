@@ -217,7 +217,18 @@ jobs:
         if: "${{ env.SLACK_WEBHOOK_URL != '' }}"
         uses: "slackapi/slack-github-action@v1.16.0"
         with:
-          payload: { "type": "mrkdwn", "text": "${{ env.SLACK_MESSAGE }}" } # yamllint disable-line rule:quoted-strings rule:braces rule:comments
-        env:
+          payload: |
+            {
+              "text": "${{ env.SLACK_MESSAGE }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "${{ env.SLACK_MESSAGE }}"
+                  }
+                }
+              ]
+            }        env:
           SLACK_WEBHOOK_URL: "${{ secrets.SLACK_WEBHOOK_URL }}"
           SLACK_WEBHOOK_TYPE: "INCOMING_WEBHOOK"
