@@ -29,20 +29,10 @@ Below list shows items that are currently synchronized and how they map between 
 | Interfaces                                    	| Interface 	                    |
 | VRFs                                            | VRFs                            |
 
-## Screenshots
-
-![ACI Job Landing Page](https://user-images.githubusercontent.com/6945229/162988513-c71fcd06-8cc7-46ac-92bf-5895cde10c81.png)
-![ACI Job Options Page](https://user-images.githubusercontent.com/6945229/155608556-22eade64-8289-4e20-82a4-e2f4e15809f4.png)
-![ACI Job Post-Run Page](https://user-images.githubusercontent.com/6945229/155609055-1d93335b-53b1-4fd8-bf1b-58d64b970f1e.png)
-![ACI Synchronization Details](https://user-images.githubusercontent.com/6945229/155609222-c720f23f-4af8-4659-a5af-83bc69466d07.png)
-![Imported Device with ACI Attributes](https://user-images.githubusercontent.com/6945229/155609612-34bdcfea-bde2-4924-8de0-3cf74796d744.png)
-![Imported IPs with ACI Attributes](https://user-images.githubusercontent.com/6945229/155609826-d3938767-6287-4626-94a3-aea4fd758204.png)
-![Imported Prefixes with ACI Attributes](https://user-images.githubusercontent.com/6945229/155610226-799c79de-719b-44af-9a07-2aaabfea5510.png)
-
 
 ## Contributing
 
-Pull requests are welcomed and automatically built and tested against multiple version of Python and multiple version of Nautobot through TravisCI.
+Pull requests are welcomed and automatically built and tested against multiple versions of Python and multiple versions of Nautobot through TravisCI.
 
 The project is packaged with a light development environment based on `docker-compose` to help with the local development of the project and to run the tests within TravisCI.
 

@@ -56,7 +56,10 @@ default_settings = {"tag": "ACI",
                    }                    
 ```
 
-The APIC URL and credentials should be created as environment variables on the host system. It’s important to know that multiple APIC instances can be configured for synchronization and this is achieved by using an identifier at the end of the environment variable. In the example below this APIC will be called `NTC` however you can easily do something like `CHCG01` to identify an APIC instance in your Chicago facility.
+The APIC URL and credentials should be created as environment variables on the host system. 
+
+Multiple APIC instances can be configured for synchronization and this is achieved by using a `_` character and identifier appended to  the names of environment variables. In the example below this APIC will be called `NTC`.  Instead of `NTC` you could, for example,  use   `CHCG01` to identify an APIC instance in your Chicago facility.
+
 
 ```bash
 export NAUTOBOT_APIC_BASE_URI_NTC=https://aci.cloud.networktocode.com
@@ -67,27 +70,18 @@ export NAUTOBOT_APIC_SITE_NTC="NTC ACI"
 export NAUTOBOT_APIC_TENANT_PREFIX_NTC="NTC_ACI"
 ```
 
-Each environment variable above contains the identifier `_NTC` at the end to serve as an identifier for the APIC. This can be any string of characters that you would like to use to identify the APIC in your environment. The identifier can be selected at run time from the SSoT dashboard when initiating a synchronization job:
+Each environment variable above contains the string `NTC` at the end, which serves as an identifier for the APIC. This can be any string of characters that you would like to use to identify the APIC in your environment. The identifier is used to select APIC from the SSoT dashboard when initiating a synchronization job:
 
 ![image](https://user-images.githubusercontent.com/6945229/162986635-fd537a5f-9fa1-4a82-95fa-af60fa07d6c2.png)
 
-If additional APICs are required, their credentials can be added using a different identifier appended to the end of the environment variables.  The identifier will then be available to choose from when executing a synchronization job.  For example, to add another set of credentials for a different APIC with the identifier `DEVNET`:
+### Nautobot Objects Affected by Settings
 
-```bash
-export NAUTOBOT_APIC_BASE_URI_DEVNET=https://sandboxapicdc.cisco.com
-export NAUTOBOT_APIC_USERNAME_DEVNET=admin
-export NAUTOBOT_APIC_PASSWORD_DEVNET=not_so_secret_password
-export NAUTOBOT_APIC_VERIFY_DEVNET=False
-export NAUTOBOT_APIC_SITE_DEVNET="DevNet Sandbox"
-export NAUTOBOT_APIC_TENANT_PREFIX_DEVNET="DevNet"
-```
-> A Site will be created in Nautobot with the name specified in the `NAUTOBOT_APIC_SITE` environment variable and resources created by the plugin will be assigned to this site. 
+A Site will be created in Nautobot with the name specified in the `NAUTOBOT_APIC_SITE` environment variable and resources created by the plugin will be assigned to this site. 
 
-> Tenants imported from ACI will be prepended with the unique name specified by the corresponding `TENANT_PREFIX` variable. This uniquely identifies tenants which might have the same name, but belong to two different APIC clusters. 
-
-> If using the [Docker Development Environment](#docker), the URL and credentials should be defined in `development/creds.env`.  See the example in `development\creds.example.env`.  
+Tenants imported from ACI will be prepended with the unique name specified by the corresponding `TENANT_PREFIX` variable. This uniquely identifies tenants which might have the same name, but belong to two different APIC clusters. 
 
 ### Configuring Device Templates
+
 In order to create a new Device Type in Nautobot that maps to a specific model of ACI leaf or spine switch, a `YAML` file needs to be provided for that model. This allows the SSoT plugin to create a Device Type, including an Interface Template that has the ports and transceiver types (ex. 10GE SFP+) as specified in the YAML file.  The files should be placed in `nautobot_ssot_aci/diffsync/device-types`, and should match the model name as it appears in the ACI  Fabric Membership area of the APIC dashboard.  For example,  given a Model name of `N9K-C9396PX` as shown below,  the YAML file should be named `N9K-C9396PX.yaml`.  
 
 ![APIC Fabric Dashboard](https://user-images.githubusercontent.com/6945229/156404496-b3f570aa-fa6b-40bc-9cfc-dcaaff55f459.png)
