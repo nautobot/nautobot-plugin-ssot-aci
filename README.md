@@ -112,7 +112,7 @@ export NAUTOBOT_APIC_TENANT_PREFIX_NTC="NTC_ACI"
 
 Each environment variable above contains the identifier `_NTC` at the end to serve as an identifier for the APIC. This can be any string of characters that you would like to use to identify the APIC in your environment. The identifier can be selected at run time from the SSoT dashboard when initiating a synchronization job:
 
-![image](https://user-images.githubusercontent.com/6945229/162986635-fd537a5f-9fa1-4a82-95fa-af60fa07d6c2.png)
+![SSoT APIC Job Options Page](https://user-images.githubusercontent.com/6945229/162986635-fd537a5f-9fa1-4a82-95fa-af60fa07d6c2.png)
 
 If additional APICs are required, their credentials can be added using a different identifier appended to the end of the environment variables.  The identifier will then be available to choose from when executing a synchronization job.  For example, to add another set of credentials for a different APIC with the identifier `DEVNET`:
 
