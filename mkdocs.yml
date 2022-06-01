@@ -1,7 +1,7 @@
 ---
-dev_addr: "127.0.0.1:8001"
+dev_addr: "0.0.0.0:8001"
 edit_uri: "edit/main/nautobot-plugin-ssot-aci/docs"
-site_name: "NautobotSsotAci Documentation"
+site_name: "Nautobot SSoT APIC Documentation"
 site_url: "https://nautobot-plugin-ssot-aci.readthedocs.io/"
 repo_url: "https://github.com/nautobot/nautobot-plugin-ssot-aci"
 python:
@@ -21,3 +21,6 @@ markdown_extensions:
       permalink: true
 nav:
   - Introduction: "index.md"
+  - Installation: "install_configure.md"
+  - Development: "development.md"
+  - Usage: "usage.md"
