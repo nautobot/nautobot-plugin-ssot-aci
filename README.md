@@ -1,15 +1,23 @@
-# Nautobot SSoT for Cisco ACI
+# Nautobot SSoT ACI - Nautobot plugin for synchronizing with Cisco ACI
+ 
+Nautobot SSoT ACI is a plugin for [Nautobot](https://github.com/nautobot/nautobot) allowing a synchronization of data from Cisco ACI into Nautobot.
 
-This Single Source of Truth (SSoT) Plugin for [Nautobot](https://github.com/nautobot/nautobot) provides the ability to synchronize objects between Cisco ACI and Nautobot. To accomplish this, Nautobot communicates with the Cisco ACI controller, the Application Policy Infrastructure Controller (APIC). The APIC provides a central point of administration for the ACI fabric via a web dashboard or REST API.  The primary benefit of the SSoT plugin is that it eliminates duplication of work entering and maintaining information in Nautobot that is automatically discovered by the Cisco APIC controller.  This includes information such as device model/serial numbers, node management IP addressing, and more. In addition, adds/updates/deletes in the ACI fabric for the synchronized objects are replicated in Nautobot. For example:
+To accomplish this, the SSoT ACI plugin communicates with the Cisco ACI controller, the Application Policy Infrastructure Controller (APIC). The APIC provides a central point of administration for the ACI fabric via a web dashboard or REST API.
 
-- When new devices are registered to the fabric, they will be added to Nautobot 
+The SSoT ACI plugin eliminates the need for manually adding objects to Nautobot that have been automatically discovered by the Cisco APIC controller.   This includes information such as device model/serial numbers, node management IP addressing, and more.
+
+In addition any changes to the ACI fabric are reflected in Nautobot when the synchronization process is executed. 
+
+Examples:
+
+- When new devices are registered to the fabric, they will be added to Nautobot on the next run of the SSoT ACI job within Nautobot.
 - When devices are decommissioned from the fabric, they will be removed from Nautobot 
 - As devices are added to the ACI fabric, their management IP addresses are automatically created as IP Addresses in Nautobot
 - As bridge domains are added with subnets, the subnets are automatically created in Nautobot as Prefixes and the gateway address configured as an IP Address
 - When a bridge domain is removed from ACI, the associated Prefix and IP Address are deleted from Nautobot
 - Interface descriptions added or updated in ACI will be reflected on the interfaces in Nautobot
 
-Below is the list of items that are currently synchronized:
+Below list shows items that are currently synchronized and how they map between systems.
 
 | **ACI**                                       	| **Nautobot**                  	|
 |-----------------------------------------------	|-------------------------------	|
@@ -23,16 +31,17 @@ Below is the list of items that are currently synchronized:
 |
 
 ## Screenshots
-![image](https://user-images.githubusercontent.com/6945229/162988513-c71fcd06-8cc7-46ac-92bf-5895cde10c81.png)
-![image](https://user-images.githubusercontent.com/6945229/155608556-22eade64-8289-4e20-82a4-e2f4e15809f4.png)
-![image](https://user-images.githubusercontent.com/6945229/155609055-1d93335b-53b1-4fd8-bf1b-58d64b970f1e.png)
-![image](https://user-images.githubusercontent.com/6945229/155609222-c720f23f-4af8-4659-a5af-83bc69466d07.png)
-![image](https://user-images.githubusercontent.com/6945229/155609612-34bdcfea-bde2-4924-8de0-3cf74796d744.png)
-![image](https://user-images.githubusercontent.com/6945229/155609826-d3938767-6287-4626-94a3-aea4fd758204.png)
-![image](https://user-images.githubusercontent.com/6945229/155610226-799c79de-719b-44af-9a07-2aaabfea5510.png)
+
+![ACI Job Landing Page](https://user-images.githubusercontent.com/6945229/162988513-c71fcd06-8cc7-46ac-92bf-5895cde10c81.png)
+![ACI Job Options Page](https://user-images.githubusercontent.com/6945229/155608556-22eade64-8289-4e20-82a4-e2f4e15809f4.png)
+![ACI Job Post-Run Page](https://user-images.githubusercontent.com/6945229/155609055-1d93335b-53b1-4fd8-bf1b-58d64b970f1e.png)
+![ACI Synchronization Details](https://user-images.githubusercontent.com/6945229/155609222-c720f23f-4af8-4659-a5af-83bc69466d07.png)
+![Imported Device with ACI Attributes](https://user-images.githubusercontent.com/6945229/155609612-34bdcfea-bde2-4924-8de0-3cf74796d744.png)
+![Imported IPs with ACI Attributes](https://user-images.githubusercontent.com/6945229/155609826-d3938767-6287-4626-94a3-aea4fd758204.png)
+![Imported Prefixes with ACI Attributes](https://user-images.githubusercontent.com/6945229/155610226-799c79de-719b-44af-9a07-2aaabfea5510.png)
 
 
-## Installation
+## Installation and Configuration
 
 The plugin is available as a Python package in pypi and can be installed with pip
 
@@ -56,6 +65,7 @@ PLUGINS = ["nautobot_ssot_aci"]
 ```
 
 In addition, the plugin behavior can be controlled with the following list of settings.
+
 ```python
 PLUGINS_CONFIG = {
     "nautobot_ssot": {
@@ -88,7 +98,8 @@ default_settings = {"tag": "ACI",
                    "manufacturer_name": "Cisco",
                    }                    
 ```
-The APIC URL and credentials should be created as environment variables on the host system, for example:
+
+The APIC URL and credentials should be created as environment variables on the host system. It’s important to know that multiple APIC instances can be configured for synchronization and this is achieved by using an identifier at the end of the environment variable. In the example below this APIC will be called `NTC` however you can easily do something like `CHCG01` to identify an APIC instance in your Chicago facility.
 
 ```bash
 export NAUTOBOT_APIC_BASE_URI_NTC=https://aci.cloud.networktocode.com
@@ -113,31 +124,33 @@ export NAUTOBOT_APIC_VERIFY_DEVNET=False
 export NAUTOBOT_APIC_SITE_DEVNET="DevNet Sandbox"
 export NAUTOBOT_APIC_TENANT_PREFIX_DEVNET="DevNet"
 ```
-> A Site will be created in Nautobot with the name specified in the `NAUTOBOT_APIC_SITE` environment variable and resources created by the plugin will be assigned to this site. In addition, the `TENANT_PREFIX` environment variable defines a unique name to be prepended to ACI tenant names in Nautobot. This is done in order to uniquely identify tenants which might be named the same, but belong to two different APIC clusters.  
+> A Site will be created in Nautobot with the name specified in the `NAUTOBOT_APIC_SITE` environment variable and resources created by the plugin will be assigned to this site. 
+
+> Tenants imported from ACI will be prepended with the unique name specified by the corresponding `TENANT_PREFIX` variable. This uniquely identifies tenants which might have the same name, but belong to two different APIC clusters. 
 
 > If using the [Docker Development Environment](#docker), the URL and credentials should be defined in `development/creds.env`.  See the example in `development\creds.example.env`.  
 
-### Device Templates
-In order to create a new Device Type in Nautobot that maps to a specific model of ACI leaf or spine switch, a `YAML` file needs to be provided for that model. This allows the SSoT plugin to create a Device Type, including an Interface Template that has the ports and tranceiver types (ex. 10GE SFP+) as specified in the YAML file.  The files should be placed in `nautobot_ssot_aci/diffsync/device-types`, and should be named as the model information would appear in the ACI Fabric Membership area of the APIC dashboard.  For example,  given a Model name of `N9K-C9396PX` as shown below,  the YAML file should be named `N9K-C9396PX.yaml`.  
+### Configuring Device Templates
+In order to create a new Device Type in Nautobot that maps to a specific model of ACI leaf or spine switch, a `YAML` file needs to be provided for that model. This allows the SSoT plugin to create a Device Type, including an Interface Template that has the ports and transceiver types (ex. 10GE SFP+) as specified in the YAML file.  The files should be placed in `nautobot_ssot_aci/diffsync/device-types`, and should match the model name as it appears in the ACI  Fabric Membership area of the APIC dashboard.  For example,  given a Model name of `N9K-C9396PX` as shown below,  the YAML file should be named `N9K-C9396PX.yaml`.  
 
 ![image](https://user-images.githubusercontent.com/6945229/156404496-b3f570aa-fa6b-40bc-9cfc-dcaaff55f459.png)
 
-There are already YAML files for a few common switch models in `nautobot_ssot_aci/diffsync/device-types`,  and several additional can be downloaded [here](https://github.com/netbox-community/devicetype-library/tree/master/device-types/Cisco). 
+There are already examples of YAML files for a few common switch models in `nautobot_ssot_aci/diffsync/device-types`,  and several additional can be downloaded [here](https://github.com/netbox-community/devicetype-library/tree/master/device-types/Cisco). 
 
 
 ## Usage
-The plugin can be used by navigating to **Plugins > Dashboard** in Nautobot.  Then click on **Cisco ACI Data Source**.
+You use the plugin by navigating to **Plugins > Dashboard** in Nautobot.  Then click on **Cisco ACI Data Source**.
 ![image](https://user-images.githubusercontent.com/6945229/155611179-8d39b79b-8c35-4a74-a871-2ebbc36a2b94.png)
  
-From the **Cisco ACI Data Source** page, you can view historical synchronization jobs, or click **Sync Now** to begin a synchronization job. 
+From the **Cisco ACI Data Source** page you can click **Sync Now** to begin a synchronization job and view the history of synchronization jobs.
 
 ![image](https://user-images.githubusercontent.com/6945229/155611423-ad0381f0-7877-491f-b5ac-fb725f9c8150.png)
 
-On the next page, you can select whether you would like to do a dry-run as well as schedule when you would like the job to run.  With a dry-run, you can see what information will be brought from ACI into Nautobot without actually performing the synchronization. The job can be run immediately, scheduled to run at a later date/time, or configured to run hourly, daily, or weekly at a specified date/time. 
+After clicking **Sync Now**, you can select whether you would like to do a dry-run as well as schedule when you would like the job to run.  With a dry-run, you can see what information will be brought from ACI into Nautobot without actually performing the synchronization. The job can be run immediately, scheduled to run at a later date/time, or configured to run hourly, daily, or weekly at a specified date/time. 
 
 ![image](https://user-images.githubusercontent.com/6945229/155612395-afca143d-1805-414b-a3c6-9f59566ba46a.png)
 
-Once you click **Run Job Now**, you will see the logs as the job progresses. When finished, you can click the **SSoT Sync Details** button to view the changes (or proposed changes, in case of a dry run).  
+Once you click **Run Job Now**, you will see the logs as the job progresses. When synchronization completes, you can click the **SSoT Sync Details** button to view the changes, or proposed changes, to Nautobot records.   
 
 ![image](https://user-images.githubusercontent.com/6945229/155612666-5488e5a3-92cb-44f1-af9b-83a6cb55b379.png)
 
@@ -279,4 +292,3 @@ Project documentation is generated by [mkdocs](https://www.mkdocs.org/) from the
 
 For any questions or comments, please check the [FAQ](FAQ.md) first and feel free to swing by the [Network to Code slack channel](https://networktocode.slack.com/) (channel #networktocode).
 Sign up [here](http://slack.networktocode.com/)
-
