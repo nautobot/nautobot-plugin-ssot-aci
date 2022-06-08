@@ -5,7 +5,7 @@ on: # yamllint disable-line rule:truthy rule:comments
   - "pull_request"
 
 env:
-  PLUGIN_NAME: "nautobot-plugin-ssot-aci"
+  PLUGIN_NAME: "nautobot-ssot-aci"
 
 jobs:
   black:
@@ -75,7 +75,7 @@ jobs:
       fail-fast: true
       matrix:
         python-version: ["3.7"]
-        nautobot-version: ["1.2.0"]
+        nautobot-version: ["1.3.5"]
     env:
       INVOKE_NAUTOBOT_SSOT_ACI_PYTHON_VER: "${{ matrix.python-version }}"
       INVOKE_NAUTOBOT_SSOT_ACI_NAUTOBOT_VER: "${{ matrix.nautobot-version }}"
@@ -112,7 +112,7 @@ jobs:
       fail-fast: true
       matrix:
         python-version: ["3.7", "3.8", "3.9"]
-        nautobot-version: ["1.2.0", "stable"]
+        nautobot-version: ["1.2.11", "stable"]
     runs-on: "ubuntu-20.04"
     env:
       INVOKE_NAUTOBOT_SSOT_ACI_PYTHON_VER: "${{ matrix.python-version }}"
@@ -207,7 +207,7 @@ jobs:
       SLACK_WEBHOOK_URL: "${{ secrets.SLACK_WEBHOOK_URL }}"
       SLACK_MESSAGE: >-
         *NOTIFICATION: NEW-RELEASE-PUBLISHED*\n
-        Repository: <${{ github.server_url }}}/${{ github.repository }}|${{ github.repository }}>\n
+        Repository: <${{ '{{ github.server_url }}' }}/${{ '{{ github.repository }}' }}|${{ '{{ github.repository }}' }}>\n
         Release: <${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ github.ref_name }}|${{ github.ref_name }}>\n
         Published by: <${{ github.server_url }}/${{ github.actor }}|${{ github.actor }}>
     steps:
@@ -229,6 +229,7 @@ jobs:
                   }
                 }
               ]
-            }        env:
+            }
+        env:
           SLACK_WEBHOOK_URL: "${{ secrets.SLACK_WEBHOOK_URL }}"
           SLACK_WEBHOOK_TYPE: "INCOMING_WEBHOOK"
