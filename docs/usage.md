@@ -1,6 +1,7 @@
 ## Usage
 
 You use the plugin by navigating to **Plugins > Dashboard** in Nautobot.  Then click on **Cisco ACI Data Source**.
+
 ![Nautobot SSoT Dashboard](https://user-images.githubusercontent.com/6945229/155611179-8d39b79b-8c35-4a74-a871-2ebbc36a2b94.png)
  
 From the **Cisco ACI Data Source** page you can click **Sync Now** to begin a synchronization job and view the history of synchronization jobs.

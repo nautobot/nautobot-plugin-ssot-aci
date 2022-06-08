@@ -1,6 +1,6 @@
 ## Installation and Configuration
 
-The plugin is available as a Python package in PyPI and can be installed with pip
+The plugin is available as a Python package in PyPI and can be installed with pip:
 
 ```shell
 pip install nautobot-ssot-aci
@@ -11,30 +11,34 @@ pip install nautobot-ssot-aci
 To ensure Nautobot SSoT for Cisco ACI is automatically re-installed during future upgrades, create a file named `local_requirements.txt` (if not already existing) in the Nautobot root directory (alongside `requirements.txt`) and list the `nautobot-ssot-aci` package:
 
 ```no-highlight
-# echo nautobot-ssot-aci >> local_requirements.txt
+echo nautobot-ssot-aci >> local_requirements.txt
 ```
 
-Once installed, the plugin needs to be enabled in your `nautobot_config.py`
+Once installed, the plugin needs to be enabled in your `nautobot_config.py`:
 
 ```python
 # In your nautobot_config.py
 PLUGINS = ["nautobot_ssot_aci"]
 ```
 
-In addition, the plugin behavior can be controlled with the following list of settings.
+### Settings
 
-| Setting Name<br>(* required) | Type | Example | Description |
-|---|:---:|---|---|
-| apics* | _Environment<br>Variable_ | `export NAUTOBOT_APIC_BASE_URI_NTC='https://apic.networktocode.com'` | URL and Credentials configured as environment <br>variables on the host system. |
-| tag* | _String_ | `"tag": "ACI"` | Tag which is created and applied to all <br>synchronized objects. |
-| tag_color* | _String_ | `"tag_color": "0047AB"` | Hex color code used for the tag. |
-| tag_up* | _String_ | `"tag_up": "UP"` | Tag indicating the state applied to synchronized <br>interfaces. |
-| tag_up_color* | _String_ | `"tag_up_color": "008000"` | Tag color applied to the "UP" tag on interface <br>status. |
-| tag_down* | _String_ | `"tag_down": "DOWN"` | Tag indicating the state applied to synchronized <br>interfaces. |
-| tag_down_color* | _String_ | `"tag_down_color": "FF3333"` | Tag color applied to the "DOWN" tag on interface <br>status. |
-| manufacturer_name* | _String_ | `"manufacturer_name": "Cisco"` | Manufacturer name. Specifically existing, or a new <br>one with this name will be created. |
-| ignore_tenants* | _List[String]_ | `"ignore_tenants": ["common", "mgmt", "infra"]` | List of ACI Tenants that should not be synchronized<br>from APIC. |
-| comments* | _String_ | `"comments": "Created by ACI SSoT Plugin"` | Comment added to synchronized objects. |
+Behavior of the plugin can be controlled with the following list of settings.
+
+| Setting Name<br>(* required) | Type | Description |
+|---|:---:|---|
+| <p>apic_*</p> |  | Per-APIC settings. See per-APIC settings section for details. |
+| tag* | _String_ | Tag which is created and applied to all <br>synchronized objects. |
+| tag_color* | _String_ | Hex color code used for the tag. |
+| tag_up* | _String_ | Tag indicating the state applied to synchronized <br>interfaces. |
+| tag_up_color* | _String_ | Tag color applied to the "UP" tag on interface <br>status. |
+| tag_down* | _String_ | Tag indicating the state applied to synchronized <br>interfaces. |
+| tag_down_color* | _String_ | Tag color applied to the "DOWN" tag on interface <br>status. |
+| manufacturer_name* | _String_ | Manufacturer name. Specifically existing, or a new <br>one with this name will be created. |
+| ignore_tenants* | _List[String]_ | List of ACI Tenants that should not be synchronized<br>from APIC. |
+| comments* | _String_ | Comment added to synchronized objects. |
+
+Example:
 
 ```python
 PLUGINS_CONFIG = {
@@ -69,9 +73,13 @@ default_settings = {"tag": "ACI",
                    }                    
 ```
 
-The APIC URL and credentials should be created as environment variables on the host system. 
+#### Per-APIC settings
 
-Multiple APIC instances can be configured for synchronization and this is achieved by using a `_` character and identifier appended to  the names of environment variables. In the example below this APIC will be called `NTC`.  Instead of `NTC` you could, for example,  use   `CHCG01` to identify an APIC instance in your Chicago facility.
+The APIC URL and credentials need to be created as environment variables on the host system.
+
+You can configure multiple APIC instances for synchronization. To do this, append `_` character, followed by an identifier, to the names of environment variables.
+
+In the example below, configured APIC uses `NTC` for an identifier. Instead of `NTC` you could, for example, use `CHCG01` to configure an APIC instance in your Chicago facility.
 
 
 ```bash
@@ -83,7 +91,7 @@ export NAUTOBOT_APIC_SITE_NTC="NTC ACI"
 export NAUTOBOT_APIC_TENANT_PREFIX_NTC="NTC_ACI"
 ```
 
-Each environment variable above contains the string `NTC` at the end, which serves as an identifier for the APIC. This can be any string of characters that you would like to use to identify the APIC in your environment. The identifier is used to select APIC from the SSoT dashboard when initiating a synchronization job:
+The identifier is used to select APIC from the SSoT dashboard when initiating a synchronization job:
 
 ![image](https://user-images.githubusercontent.com/6945229/162986635-fd537a5f-9fa1-4a82-95fa-af60fa07d6c2.png)
 
@@ -95,8 +103,12 @@ Tenants imported from ACI will be prepended with the unique name specified by th
 
 ### Configuring Device Templates
 
-In order to create a new Device Type in Nautobot that maps to a specific model of ACI leaf or spine switch, a `YAML` file needs to be provided for that model. This allows the SSoT plugin to create a Device Type, including an Interface Template that has the ports and transceiver types (ex. 10GE SFP+) as specified in the YAML file.  The files should be placed in `nautobot_ssot_aci/diffsync/device-types`, and should match the model name as it appears in the ACI  Fabric Membership area of the APIC dashboard.  For example,  given a Model name of `N9K-C9396PX` as shown below,  the YAML file should be named `N9K-C9396PX.yaml`.  
+To create a new Nautobot Device Type mapping to a specific ACI leaf or spine switch model you need to provide YAML file describing that model.  This model definition includes interface template with the ports and transceiver types (ex. 10GE SFP+) specification.
+
+The YAML files need to be placed in the `nautobot_ssot_aci/diffsync/device-types` directory. Their names need to match the model name as it appears in the ACI  Fabric Membership area of the APIC dashboard.
+
+For example, given a Model name of `N9K-C9396PX` as shown below, the YAML file should be named `N9K-C9396PX.yaml`.
 
 ![APIC Fabric Dashboard](https://user-images.githubusercontent.com/6945229/156404496-b3f570aa-fa6b-40bc-9cfc-dcaaff55f459.png)
 
-There are examples of YAML files for a few common switch models in `nautobot_ssot_aci/diffsync/device-types`,  and several additional can be downloaded [here](https://github.com/netbox-community/devicetype-library/tree/master/device-types/Cisco). 
+There are example YAML files for a few common switch models in `nautobot_ssot_aci/diffsync/device-types`, and additional ones can be downloaded [here](https://github.com/netbox-community/devicetype-library/tree/master/device-types/Cisco).

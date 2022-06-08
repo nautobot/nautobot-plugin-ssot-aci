@@ -1,6 +1,6 @@
 # Nautobot SSoT ACI - Nautobot plugin for synchronizing with Cisco ACI
 
-Nautobot SSoT ACI is a plugin for [Nautobot](https://github.com/nautobot/nautobot) allowing a synchronization of data from Cisco ACI into Nautobot.
+Nautobot SSoT ACI is a plugin for [Nautobot](https://github.com/nautobot/nautobot) allowing synchronization of data from Cisco ACI into Nautobot.
 
 This plugin is built on top of the [Nautobot Single Source of Truth (SSoT)](https://github.com/nautobot/nautobot-plugin-ssot) plugin. SSoT plugin enables Nautobot to be the aggregation point for data coming from multiple systems of record (SoR).
 
@@ -10,16 +10,16 @@ The SSoT ACI plugin eliminates the need for manually adding objects to Nautobot 
 
 In addition any changes to the ACI fabric are reflected in Nautobot when the synchronization process is executed.
 
-Examples:
+Examples of ACI changes synchronized into Nautobot:
 
-- When new devices are registered to the fabric, they will be added to Nautobot on the next run of the SSoT ACI job within Nautobot.
-- When devices are decommissioned from the fabric, they will be removed from Nautobot
-- As devices are added to the ACI fabric, their management IP addresses are automatically created as IP Addresses in Nautobot
-- As bridge domains are added with subnets, the subnets are automatically created in Nautobot as Prefixes and the gateway address configured as an IP Address
-- When a bridge domain is removed from ACI, the associated Prefix and IP Address are deleted from Nautobot
-- Interface descriptions added or updated in ACI will be reflected on the interfaces in Nautobot
+- New devices that were registered to the fabric are added to Nautobot.
+- Devices decommissioned from the fabric are removed from Nautobot.
+- Management IP addresses of devices added to the ACI fabric are created in Nautobot.
+- Subnets and gateway addresses of bridge domains created in ACI are added to Nautobot as prefixes and IP addresses.
+- Prefixes and IP addresses associated with removed ACI bridge domains are deleted from Nautobot.
+- ACI interface description additions and updates are carried over to interface descriptions in Nautobot.
 
-Below list shows items that are currently synchronized and how they map between systems.
+The below list shows object types that are currently synchronized and how they map between systems.
 
 | **ACI**                                       	| **Nautobot**                  	|
 |-----------------------------------------------	|-------------------------------	|
@@ -30,10 +30,6 @@ Below list shows items that are currently synchronized and how they map between 
 | Bridge Domain Subnet                          	| Prefix, IP Address              |
 | Interfaces                                    	| Interface 	                    |
 | VRFs                                            | VRFs                            |
-
-## Documentation
-
-Documentation is hosted on ReadTheDocs at [Nautobot Single Source of Truth Documentation](https://nautobot-plugin-ssot-aci.readthedocs.io/).
 
 ## Contributing
 
