@@ -33,7 +33,7 @@ The below list shows object types that are currently synchronized and how they m
 
 ## Documentation
 
-Documentation is hosted on ReadTheDocs at [Nautobot Single Source of Truth Documentation](https://nautobot-plugin-ssot-aci.readthedocs.io/).
+Documentation is hosted on ReadTheDocs at [Nautobot SSoT for Cisco ACI Documentation](https://nautobot-plugin-ssot-aci.readthedocs.io/).
 
 ## Screenshots
 
