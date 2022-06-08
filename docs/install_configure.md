@@ -1,6 +1,6 @@
 ## Installation and Configuration
 
-The plugin is available as a Python package in pypi and can be installed with pip
+The plugin is available as a Python package in PyPI and can be installed with pip
 
 ```shell
 pip install nautobot-ssot-aci
@@ -22,6 +22,19 @@ PLUGINS = ["nautobot_ssot_aci"]
 ```
 
 In addition, the plugin behavior can be controlled with the following list of settings.
+
+| Setting Name<br>(* required) | Type | Example | Description |
+|---|:---:|---|---|
+| apics* | _Environment<br>Variable_ | `export NAUTOBOT_APIC_BASE_URI_NTC='https://apic.networktocode.com'` | URL and Credentials configured as environment <br>variables on the host system. |
+| tag* | _String_ | `"tag": "ACI"` | Tag which is created and applied to all <br>synchronized objects. |
+| tag_color* | _String_ | `"tag_color": "0047AB"` | Hex color code used for the tag. |
+| tag_up* | _String_ | `"tag_up": "UP"` | Tag indicating the state applied to synchronized <br>interfaces. |
+| tag_up_color* | _String_ | `"tag_up_color": "008000"` | Tag color applied to the "UP" tag on interface <br>status. |
+| tag_down* | _String_ | `"tag_down": "DOWN"` | Tag indicating the state applied to synchronized <br>interfaces. |
+| tag_down_color* | _String_ | `"tag_down_color": "FF3333"` | Tag color applied to the "DOWN" tag on interface <br>status. |
+| manufacturer_name* | _String_ | `"manufacturer_name": "Cisco"` | Manufacturer name. Specifically existing, or a new <br>one with this name will be created. |
+| ignore_tenants* | _List[String]_ | `"ignore_tenants": ["common", "mgmt", "infra"]` | List of ACI Tenants that should not be synchronized<br>from APIC. |
+| comments* | _String_ | `"comments": "Created by ACI SSoT Plugin"` | Comment added to synchronized objects. |
 
 ```python
 PLUGINS_CONFIG = {
@@ -86,4 +99,4 @@ In order to create a new Device Type in Nautobot that maps to a specific model o
 
 ![APIC Fabric Dashboard](https://user-images.githubusercontent.com/6945229/156404496-b3f570aa-fa6b-40bc-9cfc-dcaaff55f459.png)
 
-There are already examples of YAML files for a few common switch models in `nautobot_ssot_aci/diffsync/device-types`,  and several additional can be downloaded [here](https://github.com/netbox-community/devicetype-library/tree/master/device-types/Cisco). 
+There are examples of YAML files for a few common switch models in `nautobot_ssot_aci/diffsync/device-types`,  and several additional can be downloaded [here](https://github.com/netbox-community/devicetype-library/tree/master/device-types/Cisco). 
