@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nautobot-ssot-aci"
-version = "0.1.0"
+version = "1.0.0"
 description = "Nautobot SSoT for Cisco ACI"
 authors = ["Network to Code, LLC <info@networktocode.com>"]
 license = "Apache-2.0"
