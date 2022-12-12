@@ -275,9 +275,7 @@ class AciAdapter(DiffSync):
 
             fn = os.path.join(devicetype_file_path, f"{self.devices[node]['model']}.yaml")
             if os.path.exists(fn):
-                device_specs = load_yamlfile(
-                    os.path.join(devicetype_file_path, f"{self.devices[node]['model']}.yaml",)
-                )
+                device_specs = load_yamlfile(fn)
                 for _interface in interfaces[node]:
                     if_list = [
                         intf
